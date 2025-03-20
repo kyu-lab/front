@@ -20,7 +20,6 @@ export default function UsersSettings() {
   const testFun = async () => {
     try {
       const response = await test();
-      debugger;
       if (response.message !== 'success') {
         throw new Error("실패");
       }

@@ -4,3 +4,4 @@
 - react-router-dom
 - tailwindcss(v3)
 - react-responsive
+- react-md-editor

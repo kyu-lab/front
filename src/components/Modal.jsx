@@ -13,7 +13,7 @@ export default function Modal({ onClose, children, isDesktop }) {
     >
       {/* 데스크톱: 모달, 모바일: 전체 페이지 */}
       <div
-        className={`bg-white ${
+        className={`bg-white dark:bg-gray-900 ${
           isDesktop
             ? 'rounded-lg w-full max-w-md p-6 mx-4 md:mx-0 md:max-w-lg relative'
             : 'w-full h-full p-4'
