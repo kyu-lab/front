@@ -1,55 +1,32 @@
-import { useState } from "react";
-import Modal from "../../../components/Modal.jsx";
+import {useEffect, useState} from "react";
+
 import UsersLogin from "./UsersLogin.jsx";
 import UsersSignUp from "./UsersSignUp.jsx";
+import userStore from "../../../utils/userStore.js";
+import uiStore from "../../../utils/uiStore.js";
+import UsersResetPassword from "./UsersResetPassword.jsx";
 
-export default function AuthPage({ onClose, isDesktop }) {
-  const [activeTab, setActiveTab] = useState("login");
+export default function AuthPage({btnRef}) {
+  const [activePage, setActivePage] = useState('login');
+  const {isLogin} = userStore(state => state);
+  const {setHasPrevious} = uiStore((state) => state.dialog);
+
+  if (isLogin) {
+    console.error('로그인 되어있음');
+    return null;
+  }
+
+  useEffect(() => {
+    if (activePage === 'login') {
+      setHasPrevious({hasPrevious: false});
+    }
+  }, [activePage])
 
   return (
-      <Modal onClose={onClose} isDesktop={isDesktop}>
-        {/* 상단: 로고, 제목, 닫기 버튼 */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-black">Login</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white text-2xl"
-          >
-            X
-          </button>
-        </div>
-
-        {/* 탭 (모바일에서는 숨김, 데스크톱에서만 표시) */}
-        {isDesktop && (
-            <div className="flex border-b mb-4">
-              <button
-                  className={`flex-1 py-2 text-center ${
-                      activeTab === "login"
-                        ? "border-b-2 border-blue-600 text-blue-600"
-                        : "text-gray-600"
-                  }`}
-                  onClick={() => setActiveTab("login")}
-              >
-                Login
-              </button>
-              <button
-                  className={`flex-1 py-2 text-center ${
-                      activeTab === "signup"
-                        ? "border-b-2 border-blue-600 text-blue-600"
-                        : "text-gray-600"
-                  }`}
-                  onClick={() => setActiveTab("signup")}
-              >
-                Sign Up
-              </button>
-            </div>
-        )}
-
-        {/* 로그인/회원가입 폼 */}
-        {activeTab === "login" && <UsersLogin />}
-        {activeTab === "signup" && <UsersSignUp />}
-      </Modal>
+    <div>
+      {activePage === "login" && <UsersLogin setPage={setActivePage} />}
+      {activePage === "findpwd" && <UsersResetPassword setPage={setActivePage} />}
+      {activePage === "signup" && <UsersSignUp setHasPrevious={setHasPrevious} ref={btnRef} setPage={setActivePage}/>}
+    </div>
   );
 }
