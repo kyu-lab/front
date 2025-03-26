@@ -1,11 +1,20 @@
-import defaultFetch from "../../../../common/defaultFetch.js";
+import {getFetch, postFetch} from "../../../../utils/fetchService.js";
 
 const API_URL = import.meta.env.VITE_COMMENT_API_URL;
 
+export async function getComments(id) {
+  try {
+    const response = await getFetch(`${API_URL}/${id}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Error during saveComment:", error);
+  }
+}
+
 export async function saveComment(createReq) {
   try {
-    return defaultFetch(`${API_URL}`, "POST", createReq);
+    return await postFetch(`${API_URL}`, createReq);
   } catch (error) {
-    console.error("Error during Request:", error);
+    console.error("Error during saveComment:", error);
   }
 }

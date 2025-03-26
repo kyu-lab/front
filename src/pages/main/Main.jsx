@@ -5,11 +5,12 @@ import {getPosts} from "./post/service/postService.js";
 
 export default function Main() {
   const [postSummaryList, setPostSummaryList] = useState([]);
+  const [activeTab, setActiveTab] = useState("new");
 
   // 스크롤 상태 제어
   const [loading, setLoading] = useState(false);
-  const [nextCursor, setNextCursor] = useState(null); // 다음 커서 관리
-  const [hasMore, setHasMore] = useState(true); // 더 불러올 데이터가 있는지
+  const nextCursorRef = useRef(null); // 다음 커서 관리
+  const hasMoreRef = useRef(true); // 더 불러올 데이터가 있는지
   const observerRef = useRef(null);
 
   // 초기 데이터
@@ -21,8 +22,8 @@ export default function Main() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loading && hasMore) {
-          handlePosts(nextCursor);
+        if (entries[0].isIntersecting && !loading && hasMoreRef.current) {
+          handlePosts(nextCursorRef.current);
         }
       },
       {
@@ -39,18 +40,21 @@ export default function Main() {
         observer.unobserve(observerRef.current);
       }
     };
-  }, [loading, nextCursor, hasMore]);
+  }, [loading]);
 
   const handlePosts = async (cursor) => {
-    if (!hasMore || loading) { // 중복 조회 방지
+    if (!hasMoreRef.current || loading) { // 중복 조회 방지
       return;
     }
     try {
       setLoading(true);
       const response = await getPosts(cursor);
-      setPostSummaryList((prev) => [...prev, ...response.data.postSummaryList]);
-      setHasMore(response.data.hasMore);
-      setNextCursor(response.data.nextCursor);
+      if (response.error) {
+        throw new Error(`게시글 로드 에러 발생, status : ${response.status}, message : ${response.error}`)
+      }
+      setPostSummaryList((prev) => [...prev, ...response.postSummaryList]);
+      hasMoreRef.current = response.hasMore;
+      nextCursorRef.current = response.nextCursor;
     } catch (error) {
       console.error("게시글 로드 실패 : ", error);
     } finally {
@@ -58,12 +62,36 @@ export default function Main() {
     }
   };
 
+  // 탭 데이터 배열
+  const orderBtnDefaultStyles = "px-4 py-3 text-sm font-medium dark:text-white"
+  const tabs = [
+    {id: "new", label: "newest"},
+    {id: "hot", label: "hotest"},
+    // 필요하면 더 추가 가능
+  ];
+
+  useEffect(() => {
+    // todo : 게시판 정렬 기능
+  }, [activeTab])
+
   return (
-    <div>
+    <>
+      {/* 정렬 헤더 */}
       <div className="border-b border-gray-700 flex items-center px-4">
         <div className="flex">
-          <button className="px-4 py-3 text-sm font-medium text-blue-400 border-b-2 border-blue-400">최신순</button>
-          <button className="px-4 py-3 text-sm font-medium text-black dark:text-white">인기순</button>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`${orderBtnDefaultStyles} ${
+                activeTab === tab.id
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-gray-600"
+              }`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -78,7 +106,8 @@ export default function Main() {
                 username={e.usersInfo.name}
                 createdAt={e.createdAt}
                 summary={e.summary}
-                commentCnt={e.commentCnt}
+                postViewCount={e.postViewCount}
+                commentCount={e.commentCount}
               />
             </Link>
           ))
@@ -91,13 +120,13 @@ export default function Main() {
       }
 
       <div ref={observerRef} className="flex items-center justify-center h-full min-h-[calc(70vh-100px)] text-gray-500 text-center px-4">
-        {!hasMore && <p>더 이상 게시글이 없습니다...</p>}
+        {!hasMoreRef && <p>더 이상 게시글이 없습니다...</p>}
       </div>
-    </div>
+    </>
   );
 }
 
-const PostInfo = ({ userId, username, createdAt, summary, commentCnt }) => {
+const PostInfo = ({userId, username, createdAt, summary, postViewCount, commentCount}) => {
   return (
     <div className="p-6 shadow">
       <div className="flex space-x-3">
@@ -119,7 +148,7 @@ const PostInfo = ({ userId, username, createdAt, summary, commentCnt }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </button>
-              <span className="text-sm">{commentCnt}</span>
+              <span className="text-sm">{commentCount}</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-500">
               <button 

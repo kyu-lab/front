@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import {getPost} from "./service/postService.js";
 import {useParams} from "react-router-dom";
 import Editor from "../../../utils/Editor.jsx";
-import {test} from "../../header/users/service/usersService.js";
-import {saveComment} from "./service/commentService.js";
+import {getComments, saveComment} from "./service/commentService.js";
+import {alertStatus} from "../../../utils/enums.js";
+import uiStore from "../../../utils/uiStore.js";
 
 export default function View() {
   const {id} = useParams();
@@ -14,38 +15,65 @@ export default function View() {
   const [isShowPostMenu, setIsShowPostMenu] = useState(false);
   const [isShowCommentMenu, setIsShowCommentMenu] = useState(false);
   const menuRef = useRef(null);
+  const {openAlert} = uiStore((state) => state.alert);
 
   useEffect(() => {
     const handleGetPost = async () => {
       try {
         const response = await getPost(id);
-        const data = response.data;
-
-        const post = data.postDetail;
-        const writer = data.usersInfo;
-        const commentList = data.commentList;
-
         setPost({
-          postId: post.postId,
-          subject: post.subject,
-          content: post.content,
-          createdAt: post.createdAt
+          ...response.postDetail
         });
-
         setWriter({
-          id: writer.id,
-          name: writer.name
-        });
+          ...response.usersInfo
+        })
 
-        setComments((prevComments) => [...prevComments, ...commentList]);
+        const recentPost = {
+          post: {
+            postId: response.postDetail.postId,
+            subject: response.postDetail.subject,
+            createdAt: response.postDetail.createdAt
+          },
+          writer: {
+            id: response.usersInfo.id,
+            name: response.usersInfo.name
+          }
+        }
+
+        let recentPostList = JSON.parse(sessionStorage.getItem('recentPosts'));
+        if (recentPostList.length > 3) {
+          recentPostList.shift();
+        }
+
+        if (recentPostList.length === 0) {
+          recentPostList.push(recentPost);
+        }
+
+        if (!recentPostList.some(item => item.postId !== response.postDetail.postId)) {
+          recentPostList.push(recentPost);
+        }
+
+        sessionStorage.setItem('recentPosts', JSON.stringify(recentPostList));
+        
+        // 게시글 요청
+        handleComments();
       } catch (error) {
-        alert("게시글 로드 실패");
+        // todo : 에러 페이지로 보내야함
         console.error("게시글 로드 실패 : ", error);
       }
     }
     handleGetPost();
   }, []);
 
+  const handleComments = async () => {
+    try {
+      const commentList = await getComments(id);
+      setComments((prevComments) => [...prevComments, ...commentList]);
+    } catch (error) {
+      console.error("게시글 로드 실패 : ", error);
+    }
+  }
+  
   const handleSaveComment = async () => {
     try {
       const request = {
@@ -54,13 +82,14 @@ export default function View() {
         content: comment
       }
       const response = await saveComment(request);
-      if (response.message !== 'success') {
-        throw new Error("실패");
+      if (!response.ok) {
+        throw new Error(`댓글 등록이 실패 ${response.status}`);
       }
-      alert('테스트 성공');
+      openAlert({message: "댓글이 등록되었습니다.", type: alertStatus.SUCCESS});
+      setComment('');
     } catch (error) {
-      alert('테스트 실패');
-      console.error("테스트 실패", error);
+      openAlert({message: "잠시 후 다시 등록해주세요.", type: alertStatus.ERROR});
+      console.error(error);
     }
   };
 
@@ -124,7 +153,7 @@ export default function View() {
             <div className="p-4">
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                 <textarea
-                  placeholder="댓글을 입력하세요"
+                  placeholder={comments.length === 0 ? `첫 댓글을 작성해볼까요?` : `댓글을 입력하세요`}
                   className="w-full p-3 outline-none text-black dark:text-white bg-white dark:bg-gray-900"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
@@ -189,7 +218,7 @@ export default function View() {
                       </>
                     ))
                   ) : (
-                    <>댓글이 아직 없어요..</>
+                    <>댓글이 없습니다.</>
                   )
                 }
               </div>

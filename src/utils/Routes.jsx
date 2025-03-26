@@ -5,7 +5,7 @@ import View from "../pages/main/post/View.jsx";
 
 const routes = [
   { path: '/', element: <Main /> },
-  { path: '/:username/info', element: <UsersSettings /> },
+  { path: '/user/:username/info', element: <UsersSettings /> },
   { path: '/write', element: <Write /> },
   { path: '/post/:id', element: <View /> },
   // 페이지 추가시 추가

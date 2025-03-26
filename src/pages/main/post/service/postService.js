@@ -1,10 +1,14 @@
-import defaultFetch from "../../../../common/defaultFetch.js";
+import {getFetch, postFetch} from "../../../../utils/fetchService.js";
 
 const API_URL = import.meta.env.VITE_POST_API_URL;
 
 export async function getPosts(cursor) {
   try {
-    return defaultFetch(`${API_URL}?cursor=${cursor}`, "GET");
+    const response = await getFetch(`${API_URL}?cursor=${cursor}`);
+    if (!response.ok) {
+
+    }
+    return await response.json();
   } catch (error) {
     console.error("Error during Request:", error);
   }
@@ -12,7 +16,8 @@ export async function getPosts(cursor) {
 
 export async function getPost(postId) {
   try {
-    return defaultFetch(`${API_URL}/${postId}`, "GET");
+    const response = await getFetch(`${API_URL}/${postId}`);
+    return await response.json();
   } catch (error) {
     console.error("Error during Request:", error);
   }
@@ -20,7 +25,7 @@ export async function getPost(postId) {
 
 export async function savePost(createReq) {
   try {
-    return defaultFetch(`${API_URL}`, "POST", createReq);
+    return await postFetch(`${API_URL}`, createReq);
   } catch (error) {
     console.error("Error during Request:", error);
   }

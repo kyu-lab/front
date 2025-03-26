@@ -71,7 +71,9 @@ export default function Editor({setContent = null, editable= true, content = ""}
         {/* 본문 입력 */}
         <div className="mb-4">
           <EditorContent
-            className={editable ? "border border-gray-300 rounded-lg" : "text-black dark:text-white"}
+            className={`text-black dark:text-white 
+              ${editable ? "border border-gray-300 rounded-lg" : "text-black dark:text-white"}`
+            }
             editor={editor}
           />
         </div>

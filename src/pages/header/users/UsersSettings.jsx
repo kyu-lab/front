@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 
-import {test, update} from "./service/usersService.js";
+import {update} from "./service/usersService.js";
 
 export default function UsersSettings() {
   const [password, setPassWord] = useState("");
@@ -17,19 +17,6 @@ export default function UsersSettings() {
     }
   };
 
-  const testFun = async () => {
-    try {
-      const response = await test();
-      if (response.message !== 'success') {
-        throw new Error("실패");
-      }
-      alert('테스트 성공');
-    } catch (error) {
-      alert('테스트 실패');
-      console.error("테스트 실패", error);
-    }
-  };
-
   return (
       <div className="flex flex-col md:flex-row gap-4 p-4 min-h-screen">
         <aside className="bg-white rounded-lg shadow w-full md:w-64 p-4 h-fit">
@@ -40,9 +27,6 @@ export default function UsersSettings() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-            </button>
-            <button onClick={testFun} className="flex items-center w-full py-2 text-left text-gray-700 hover:bg-gray-100 rounded-lg">
-              <span className="text-blue-500">테스트 버튼</span>
             </button>
           </div>
         </aside>

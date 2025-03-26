@@ -1,4 +1,4 @@
-import "./styless/main.css"
+import "./styles/main.css"
 import App from './App.jsx'
 
 import { StrictMode } from 'react'
