@@ -1,6 +1,6 @@
 import {getFetch, postFetch} from "../../../../utils/fetchService.js";
 
-const API_URL = import.meta.env.VITE_COMMENT_API_URL;
+const API_URL = '/comment';
 
 export async function getComments(id) {
   try {

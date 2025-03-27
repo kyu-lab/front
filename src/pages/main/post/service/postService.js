@@ -1,6 +1,6 @@
 import {getFetch, postFetch} from "../../../../utils/fetchService.js";
 
-const API_URL = import.meta.env.VITE_POST_API_URL;
+const API_URL = '/post';
 
 export async function getPosts(cursor) {
   try {

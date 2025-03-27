@@ -1,7 +1,7 @@
 import {getFetch, postFetch, putFetch} from "../../../../utils/fetchService.js";
 import validator from "validator/es";
 
-const API_URL = import.meta.env.VITE_USERS_API_URL;
+const API_URL = '/users'
 
 export async function existsEmail(email) {
   try {
