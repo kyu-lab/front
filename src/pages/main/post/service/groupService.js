@@ -1,6 +1,6 @@
 import {getFetch} from "../../../../utils/fetchService.js";
 
-const API_URL = import.meta.env.VITE_GROUP_API_URL;
+const API_URL = '/group';
 
 export async function getGroup(userId) {
   try {

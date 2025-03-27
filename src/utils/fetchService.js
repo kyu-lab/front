@@ -1,8 +1,9 @@
-const GATE_WAY_URL = import.meta.env.VITE_GATE_WAY_URL;
+const BASE_API_URL = import.meta.env.VITE_BASE_API_URL;
 
 export const getFetch = async (url = null) => {
   urlCheck(url);
 
+  url = BASE_API_URL + url;
   const response = await fetch(url, {
     headers : {
       "Content-Type": "application/json",
@@ -24,6 +25,8 @@ export const postFetch = async (url = null, requestData, requestCount = 0) => {
     throw new Error(`postFetch Error url : ${url}`);
   }
 
+  debugger;
+  url = BASE_API_URL + url;
   const response = await fetch(url, {
     method: "POST",
     headers : {
@@ -59,6 +62,7 @@ export const putFetch = async (url = null, requestData, requestCount = 0) => {
     throw new Error(`token을 확인해주세요.`);
   }
 
+  url = BASE_API_URL + url;
   const response = await fetch(url, {
     method: "PUT",
     headers : {
@@ -80,7 +84,7 @@ export const putFetch = async (url = null, requestData, requestCount = 0) => {
 const tokenRequest = async (response, requsetCount) => {
   const refreshUrl = response.headers.get("X-Refresh-URL");
   if (refreshUrl) {
-    const refreshResponse = await fetch(GATE_WAY_URL + refreshUrl, {
+    const refreshResponse = await fetch(BASE_API_URL + refreshUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
