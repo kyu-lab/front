@@ -25,7 +25,6 @@ export const postFetch = async (url = null, requestData, requestCount = 0) => {
     throw new Error(`postFetch Error url : ${url}`);
   }
 
-  debugger;
   url = BASE_API_URL + url;
   const response = await fetch(url, {
     method: "POST",
