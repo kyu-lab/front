@@ -1,32 +1,31 @@
-import {getFetch, postFetch} from "../../../../utils/fetchService.js";
+import customAxios from "../../../../utils/customAxios.js";
 
 const API_URL = '/post';
 
-export async function getPosts(cursor) {
-  try {
-    const response = await getFetch(`${API_URL}?cursor=${cursor}`);
-    if (!response.ok) {
-
-    }
-    return await response.json();
-  } catch (error) {
-    console.error("Error during Request:", error);
+export async function getPosts(cursor, order) {
+  const response = await customAxios.get(`${API_URL}?cursor=${cursor}&order=${order}`);
+  if (response.status === 200) {
+    return response.data;
   }
+  throw new Error(`getPosts 에러, status : ${response.status}, text : ${response.statusText}`);
 }
 
 export async function getPost(postId) {
-  try {
-    const response = await getFetch(`${API_URL}/${postId}`);
-    return await response.json();
-  } catch (error) {
-    console.error("Error during Request:", error);
+  const response = await customAxios.get(`${API_URL}/${postId}`);
+  if (response.status === 200) {
+    return response.data;
   }
+  throw new Error(`getPost 에러, status : ${response.status}, text : ${response.statusText}`);
 }
 
 export async function savePost(createReq) {
-  try {
-    return await postFetch(`${API_URL}`, createReq);
-  } catch (error) {
-    console.error("Error during Request:", error);
-  }
+  return await customAxios.post(`${API_URL}`, createReq);
+}
+
+export async function updatePost(updateReq) {
+  return await customAxios.put(`${API_URL}`, updateReq);
+}
+
+export async function deletePost(postId) {
+  return await customAxios.delete(`${API_URL}/${postId}`);
 }

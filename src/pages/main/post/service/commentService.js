@@ -1,20 +1,14 @@
-import {getFetch, postFetch} from "../../../../utils/fetchService.js";
+import customAxios from "../../../../utils/customAxios.js";
 
 const API_URL = '/comment';
 
 export async function getComments(id) {
-  try {
-    const response = await getFetch(`${API_URL}/${id}`);
-    return await response.json();
-  } catch (error) {
-    console.error("Error during saveComment:", error);
+  const response = await customAxios.get(`${API_URL}/${id}`);
+  if (response.status === 200) {
+    return response.data;
   }
 }
 
 export async function saveComment(createReq) {
-  try {
-    return await postFetch(`${API_URL}`, createReq);
-  } catch (error) {
-    console.error("Error during saveComment:", error);
-  }
+  return await customAxios.post(`${API_URL}`, createReq);
 }

@@ -1,15 +1,10 @@
-import {getFetch, postFetch, putFetch} from "../../../../utils/fetchService.js";
+import customAxios from "../../../../utils/customAxios.js";
 import validator from "validator/es";
 
 const API_URL = '/users'
 
-export async function existsEmail(email) {
-  try {
-    const response = getFetch(`${API_URL}/mail/${email}/check`);
-    return (await response).json();
-  } catch (error) {
-    throw new Error(`메일 확인 실패: ${error}`);
-  }
+export async function checkEmail(email) {
+  return await customAxios.get(`${API_URL}/mail/${email}/check`);
 }
 
 /**
@@ -88,51 +83,32 @@ export function validationPassword({password, setPasswordValidationError}) {
 }
 
 export async function existsName(name) {
-  try {
-    const response = getFetch(`${API_URL}/name/${name}/check`);
-    return (await response).json();
-  } catch (error) {
-    throw new Error(`사용자 이름 확인 실패: ${error}`);
-  }
-}
-
-export async function login(loginReq) {
-  try {
-    const response =  await postFetch(`${API_URL}/login`, loginReq);
-    if (!response.ok) {
-      return false;
-    }
-    const data = await response.json();
-    localStorage.setItem("token", data.token);
-    return true;
-  } catch (error) {
-    throw new Error(`로그인 실패: ${error}`);
-  }
+  return await customAxios.get(`${API_URL}/name/${name}/check`);
 }
 
 export async function signup(signUpReq) {
-  try {
-    const response = await postFetch(`${API_URL}/signup`, signUpReq);
-    return await response.json();
-  } catch (error) {
-    throw new Error(`회원가입 실패: ${error}`);
+  return await customAxios.post(`${API_URL}/signup`, signUpReq);
+}
+
+export async function login(loginReq) {
+  const response =  await customAxios.post(`${API_URL}/login`, loginReq);
+  if (response.status === 200) {
+    localStorage.setItem("token", response.data.token);
   }
 }
 
-export async function logout(id) {
-  try {
-    const response = await postFetch(`${API_URL}/logout`, id);
-    const data = await response.json();
-    return data.isOk;
-  } catch (error) {
-    throw new Error(`로그아웃 실패: ${error}`);
-  }
+export async function logout() {
+  return await customAxios.post(`${API_URL}/logout`);
 }
+
+export async function existsEmail(email) {
+  return await customAxios.get(`${API_URL}/mail/${email}/exists`);
+}
+export async function changePassword(passwordReq) {
+  return await customAxios.post(`${API_URL}/change/password`, passwordReq);
+}
+
 
 export async function update(id, updateReq) {
-  try {
-    return putFetch(`${API_URL}/${id}/update`, updateReq);
-  } catch (error) {
-    throw new Error(`사용자 업데이트 실패: ${error}`);
-  }
+  return await customAxios.put(`${API_URL}/${id}/update`, updateReq);
 }

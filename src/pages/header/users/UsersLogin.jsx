@@ -7,27 +7,38 @@ import userStore from "../../../utils/userStore.js";
 import {alertStatus} from "../../../utils/enums.js";
 
 export default function UsersLogin({setPage}) {
+  // 페이지 제어
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  
+  // 버튼 제어
   const [loginBtnEnabled, setLoginBtnEnabled] = useState(false); // 로그인 버튼
+  
+  // ui 제어
   const {closeDialog} = uiStore(state => state.dialog);
   const {openAlert} = uiStore((state) => state.alert);
+  
+  // 사용자 데이터 제어
   const {setUp} = userStore(state => state);
 
+  // 로그인 데이터
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
   const handleLogin = async () => {
     try {
-      const response = await login({email, password});
-      if (!response) {
-        openAlert({message: "이메일과 비밀번호를 다시 확인해주세요.", type: alertStatus.WARN});
-        return;
-      }
-      setUp();
-      closeDialog();
-      navigate('/');
-      openAlert({message: "로그인 되었습니다.", type: alertStatus.SUCCESS});
+      await login({email, password});
+      console.log('user login and setup...');
+      setUp().then(() => {
+        closeDialog();
+        navigate('/');
+        openAlert({message: "로그인 되었습니다.", type: alertStatus.SUCCESS});
+      });
     } catch (error) {
-      openAlert({message: "잠시 후 다시 로그인해주세요", type: alertStatus.ERROR});
+      if (error.response.status === 404) {
+        openAlert({message: "이메일과 비밀번호를 다시 확인해주세요.", type: alertStatus.WARN});
+      } else {
+        openAlert({message: "잠시 후 다시 로그인해주세요", type: alertStatus.ERROR});
+      }
     }
   };
 

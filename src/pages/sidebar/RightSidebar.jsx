@@ -7,7 +7,7 @@ export default function RightSidebar() {
 
   // 사이드바 결정 로직
   const renderSidebar = () => {
-    if (location.pathname.startsWith('/post/')) {
+    if (location.pathname.startsWith('/post/') && !location.pathname.endsWith('/update')) {
       return <AuthorInfo />;
     }
     if (location.pathname === '/') {

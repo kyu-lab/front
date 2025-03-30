@@ -17,7 +17,7 @@ export default function Editor({setContent = null, editable= true, content = ""}
       }),
     ],
     editable: editable,
-    onCreate: ({ editor }) => {
+    onCreate: ({editor}) => {
       editor.commands.clearContent(); // 불필요한 <br> 태그 제거
     },
     content: content, // 빈 문자열로 초기화

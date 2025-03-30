@@ -1,12 +1,7 @@
-import {getFetch} from "../../../../utils/fetchService.js";
+import customAxios from "../../../../utils/customAxios.js";
 
 const API_URL = '/group';
 
-export async function getGroup(userId) {
-  try {
-    const response = await getFetch(`${API_URL}/${userId}`);
-    return await response.json();
-  } catch (error) {
-    console.error("Error during Request:", error);
-  }
+export async function getGroup() {
+  return await customAxios.get(`${API_URL}`);
 }

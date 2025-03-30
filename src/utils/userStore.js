@@ -7,7 +7,7 @@ const userStore = create((set) => ({
     name: ''
   },
   isLogin: false,
-  setUp: () => {
+  setUp: async () => {
     const token = localStorage.getItem("token");
     if (!token || typeof token !== 'string') {
       return;

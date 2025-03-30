@@ -13,13 +13,13 @@ export default function Loading() {
       role="status"
       className="fixed top-5 left-1/2 transform -translate-x-1/2 p-4 shadow-sm z-50 max-w-md"
     >
-      {isFullScreen && <div className="p-4 shadow-sm max-w-md flex items-center justify-center">{loadingAnimcation}</div>}
-      {!isFullScreen && {loadingAnimcation}}
+      {isFullScreen && <div className="p-4 shadow-sm max-w-md flex items-center justify-center"><LoadingAnimcation /></div>}
+      {!isFullScreen && <LoadingAnimcation />}
     </div>
   );
 }
 
-export const loadingAnimcation = () => {
+export const LoadingAnimcation = () => {
   return (
     <div className="p-4 shadow-sm max-w-md flex items-center justify-center">
       <svg

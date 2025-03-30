@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 
 import {
-  existsEmail,
+  checkEmail,
   existsName,
   signup,
   validationEmail,
@@ -12,9 +12,14 @@ import uiStore from "../../../utils/uiStore.js";
 import {alertStatus} from "../../../utils/enums.js";
 
 export default function UsersSignUp({setHasPrevious, setPage}){
+  // 페이지 제어
   const [step, setStep] = useState(1);
+  
+  // 버튼 제어
   const [emailBtnEnabled, setEmailBtnEnabled] = useState(false); // 이메일 확인 버튼
   const [signupBtnEnabled, setSignupBtnEnabled] = useState(false); // 회원가입 버튼
+  
+  // ui 제어
   const {openAlert} = uiStore((state) => state.alert);
   const {setOnBack} = uiStore((state) => state.dialog);
 
@@ -39,24 +44,26 @@ export default function UsersSignUp({setHasPrevious, setPage}){
     }
 
     try {
-      const response = await existsEmail(email);
-      if (!response.isOk) {
+      const response = await checkEmail(email);
+
+      if (response.status === 200) {
+        setStep(2); // 이메일이 중복되지 않으면 다음 단계로
+        setHasPrevious({hasPrevious: true}); // 뒤로가기 버튼 표시
+
+        // step2 데이터 초기화
+        setSignupBtnEnabled(false);
+        setName('');
+        setNameValidationError('');
+        setPassword('');
+        setPasswordValidationError('');
+      }
+    } catch (error) {
+      if (error.response.status === 409) {
         setEmailValidationError('이미 존재하는 이메일입니다.');
         setEmailBtnEnabled(false);
-        return;
+      } else {
+        openAlert({message: "잠시 후 다시 확인해주세요..", type: alertStatus.ERROR});
       }
-
-      setStep(2); // 이메일이 중복되지 않으면 다음 단계로
-      setHasPrevious({hasPrevious: true}); // 뒤로가기 버튼 표시
-
-      // step2 데이터 초기화
-      setSignupBtnEnabled(false);
-      setName('');
-      setNameValidationError('');
-      setPassword('');
-      setPasswordValidationError('');
-    } catch (error) {
-      openAlert({message: "잠시 후 다시 확인해주세요..", type: alertStatus.ERROR});
     }
   };
   
@@ -64,16 +71,19 @@ export default function UsersSignUp({setHasPrevious, setPage}){
   const checkName = async () => {
     try {
       const response = await existsName(name);
-      if (!response.isOk) {
-        setNameInfo(response.message);
-        setIsValidName(false);
+      if (response.status === 200) {
+        setIsValidName(true);
         return true;
       }
-
-      setIsValidName(true);
       return false;
     } catch (error) {
-      openAlert({message: "잠시 후 다시 확인해주세요..", type: alertStatus.ERROR});
+      if (error.response.status === 409) {
+        setNameInfo('이미 사용중인 이름입니다.');
+        setIsValidName(false);
+      } else {
+        openAlert({message: "잠시 후 다시 확인해주세요..", type: alertStatus.ERROR});
+      }
+      return false;
     }
   };
 
@@ -98,16 +108,16 @@ export default function UsersSignUp({setHasPrevious, setPage}){
       }
 
       const response = await signup({email, name, password});
-      const isOk = response.isOk;
-      const message = response.message || '';
-      openAlert({message: message, type: isOk ? alertStatus.SUCCESS : alertStatus.INFO});
-      if (!isOk) {
-        return;
+      if (response.status === 200) {
+        openAlert({message: `${response.data}`, type: alertStatus.SUCCESS});
+        setPage("login");
       }
-      setPage("login");
     } catch (error) {
-      openAlert({message: "잠시 후 다시 시도해주세요.", type: alertStatus.ERROR});
-      console.error(`회원 가입 실패: ${error.message}`);
+      if (error.response.status === 409) {
+        openAlert({message: `${error.response.data}`, type: alertStatus.WARN});
+      } else {
+        openAlert({message: "잠시 후 다시 확인해주세요..", type: alertStatus.ERROR});
+      }
     }
   };
 

@@ -1,21 +1,46 @@
 import React, {useState} from "react";
 
+import {useNavigate, useParams} from "react-router-dom";
+
 import {update} from "./service/usersService.js";
+import userStore from "../../../utils/userStore.js";
+import uiStore from "../../../utils/uiStore.js";
+import {alertStatus} from "../../../utils/enums.js";
 
 export default function UsersSettings() {
+  // 사용자 데이터
   const [password, setPassWord] = useState("");
+
+  // 페이지 이동
+  const navigate = useNavigate();
+  
+  // 파라미터
+  const {username} = useParams();
+
+  // 사용자 제어
+  const {isLogin, userInfo} = userStore(state => state);
+
+  // ui 제어
+  const {openAlert} = uiStore((state) => state.alert);
 
   const handleUpdate = async () => {
     try {
-      const id = JSON.parse(localStorage.getItem("userInfo")).id;
+      const id = userInfo.id;
       const response = await update(id, {passWord: password});
-      alert('업데이트 성공');
-      setPassWord("");
+      if (response.status === 200) {
+        openAlert({message: "수정되었습니다.", type: alertStatus.SUCCESS});
+        setPassWord("");
+      }
     } catch (error) {
-      alert('업데이트 실패');
-      console.error("업데이트 실패", error);
+      openAlert({message: "수정에 실패하였습니다..", type: alertStatus.ERROR});
     }
   };
+
+  // todo : 사용자 설정 페이지 인증 수정 필요 (조금 더 id 비교까지 해서)
+  if (!isLogin || username !== userInfo.name) {
+    navigate('/error404');
+    return null;
+  }
 
   return (
       <div className="flex flex-col md:flex-row gap-4 p-4 min-h-screen">

@@ -6,10 +6,19 @@ import {alertStatus} from "../../../utils/enums.js";
 import uiStore from "../../../utils/uiStore.js";
 
 export default function UsersMenu() {
+  // 페이지 제어
   const navigate = useNavigate();
+  
+  // 메뉴 제어
   const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
+  
+  // 사용자 화면 모드
   const [curTheme, setCurTheme] = useState(localStorage.getItem('theme') || 'default');
-  const {userInfo, reset} = userStore(state => state);
+  
+  // 사용자 데이터
+  const {reset} = userStore(state => state);
+  
+  // ui 제어
   const {openAlert} = uiStore((state) => state.alert);
 
   // 처음 로드될 때 localStorage에서 테마 가져오기
@@ -43,15 +52,14 @@ export default function UsersMenu() {
 
   const handleLogout = async () => {
     try {
-      const result = await logout({id : userInfo.id});
-      if (!result) {
-        openAlert({message: "로그아웃 되었습니다.", type: alertStatus.WARN});
+      const response = await logout();
+      if (response.status === 200) {
+        openAlert({message: "로그아웃 되었습니다.", type: alertStatus.SUCCESS});
+        navigate('/');
+        reset();
       }
-      openAlert({message: "로그아웃 되었습니다.", type: alertStatus.SUCCESS});
-      navigate('/');
-      reset();
     } catch (error) {
-      openAlert({message: "로그아웃 되었습니다.", type: alertStatus.ERROR});
+      openAlert({message: "잠시 후 다시 로그아웃 시도해주세요.", type: alertStatus.ERROR});
     }
   };
 
@@ -62,7 +70,7 @@ export default function UsersMenu() {
       <div className="p-2">
         <Link
           className="flex items-center space-x-2 w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-          to={`/user/${userInfo.id}/info`}
+          to={`/user/settings`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

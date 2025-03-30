@@ -1,42 +1,70 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {getPost} from "./service/postService.js";
-import {useParams} from "react-router-dom";
+import {deletePost, getPost} from "./service/postService.js";
+import {useNavigate, useParams} from "react-router-dom";
 import Editor from "../../../utils/Editor.jsx";
 import {getComments, saveComment} from "./service/commentService.js";
-import {alertStatus} from "../../../utils/enums.js";
+import {alertStatus, promptStatus} from "../../../utils/enums.js";
 import uiStore from "../../../utils/uiStore.js";
+import userStore from "../../../utils/userStore.js";
 
 export default function View() {
+  // 파라미터
   const {id} = useParams();
+  
+  // 페이지이동
+  const navigate = useNavigate();
+  
+  // 조회 데이터
   const [post, setPost] = useState({});
   const [writer, setWriter] = useState({});
-  const [comment, setComment] = useState('');
   const [comments, setComments] = useState([]);
+  
+  // 사용자 데이터
+  const [comment, setComment] = useState('');
+  
+  // 메뉴 제어
   const [isShowPostMenu, setIsShowPostMenu] = useState(false);
   const [isShowCommentMenu, setIsShowCommentMenu] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
+  
+  // 사용자 제어
+  const {isLogin, userInfo} = userStore(state => state);
+  
+  // ui 제어
   const menuRef = useRef(null);
   const {openAlert} = uiStore((state) => state.alert);
+  const {openPrompt} = uiStore((state) => state.prompt);
 
   useEffect(() => {
     const handleGetPost = async () => {
       try {
-        const response = await getPost(id);
+        const [postResponose, commentResponose] = await Promise.all([
+          getPost(id, userInfo.id), getComments(id)
+        ]);
+
         setPost({
-          ...response.postDetail
+          ...postResponose.postDetail
         });
         setWriter({
-          ...response.usersInfo
-        })
+          ...postResponose.usersInfo
+        });
+
+        setComments((prevComments) => [...prevComments, ...commentResponose]);
+
+        // 글 수정권한 및 삭제 부여
+        if (userInfo.id == postResponose.usersInfo.id) {
+          setCanEdit(true);
+        }
 
         const recentPost = {
           post: {
-            postId: response.postDetail.postId,
-            subject: response.postDetail.subject,
-            createdAt: response.postDetail.createdAt
+            postId: postResponose.postDetail.postId,
+            subject: postResponose.postDetail.subject,
+            createdAt: postResponose.postDetail.createdAt
           },
           writer: {
-            id: response.usersInfo.id,
-            name: response.usersInfo.name
+            id: postResponose.usersInfo.id,
+            name: postResponose.usersInfo.name
           }
         }
 
@@ -49,46 +77,61 @@ export default function View() {
           recentPostList.push(recentPost);
         }
 
-        if (!recentPostList.some(item => item.postId !== response.postDetail.postId)) {
+        if (!recentPostList.some(item => item.postId !== postResponose.postDetail.postId)) {
           recentPostList.push(recentPost);
         }
 
         sessionStorage.setItem('recentPosts', JSON.stringify(recentPostList));
         
-        // 게시글 요청
-        handleComments();
       } catch (error) {
-        // todo : 에러 페이지로 보내야함
-        console.error("게시글 로드 실패 : ", error);
+        navigate('/error404');
       }
     }
     handleGetPost();
   }, []);
 
-  const handleComments = async () => {
-    try {
-      const commentList = await getComments(id);
-      setComments((prevComments) => [...prevComments, ...commentList]);
-    } catch (error) {
-      console.error("게시글 로드 실패 : ", error);
-    }
-  }
-  
   const handleSaveComment = async () => {
     try {
       const request = {
         postId: post.postId,
-        userId: writer.id,
         content: comment
       }
       const response = await saveComment(request);
-      if (!response.ok) {
-        throw new Error(`댓글 등록이 실패 ${response.status}`);
+      if (response.status === 200) {
+        openAlert({message: "댓글이 등록되었습니다.", type: alertStatus.SUCCESS});
+        setComment('');
       }
-      openAlert({message: "댓글이 등록되었습니다.", type: alertStatus.SUCCESS});
-      setComment('');
     } catch (error) {
       openAlert({message: "잠시 후 다시 등록해주세요.", type: alertStatus.ERROR});
+      console.error(error);
+    }
+  };
+
+  const handlePostUpdate = async () => {
+    try {
+      const isUpdate = await openPrompt({message: "게시글을 수정하시겠습니까?", type: promptStatus.INFO});
+      if (isUpdate) {
+        navigate(`/post/${post.postId}/update`);
+      }
+    } catch (error) {
+      openAlert({message: "삭제에 실패하였습니다.", type: alertStatus.ERROR});
+      console.error(error);
+    }
+  };
+
+  const handlePostDelete = async () => {
+    try {
+      const isDelete = await openPrompt({message: "정말로 삭제할까요?", type: promptStatus.WARN});
+      if (isDelete) {
+        const response = await deletePost(post.postId);
+        if (!response) {
+          throw new Error(`게시글 삭제 실패 ${response.status}`);
+        }
+        openAlert({message: "삭제되었습니다.", type: alertStatus.SUCCESS});
+        navigate('/');
+      }
+    } catch (error) {
+      openAlert({message: "삭제에 실패하였습니다.", type: alertStatus.ERROR});
       console.error(error);
     }
   };
@@ -131,6 +174,28 @@ export default function View() {
                         </svg>
                         <span className="text-black dark:text-white">공유하기</span>
                       </button>
+                      {
+                        canEdit && (
+                          <>
+                            <button
+                              onClick={handlePostUpdate}
+                              className="flex items-center w-full p-3 hover:bg-gray-100 dark:hover:bg-gray-600">
+                              <svg className="h-5 w-5 text-black dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                              </svg>
+                              <span className="text-black dark:text-white">수정하기</span>
+                            </button>
+                            <button
+                              onClick={handlePostDelete}
+                              className="flex items-center w-full p-3 hover:bg-gray-100 dark:hover:bg-gray-600">
+                              <svg className="h-5 w-5 text-black dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                              </svg>
+                              <span className="text-black dark:text-white">삭제하기</span>
+                            </button>
+                          </>
+                        )
+                      }
                     </div>
                   )}
                 </div>
@@ -150,13 +215,15 @@ export default function View() {
             </div>
 
             {/* Comment input */}
-            <div className="p-4">
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            {
+              isLogin && (
+                <div className="p-4">
+                      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                 <textarea
-                  placeholder={comments.length === 0 ? `첫 댓글을 작성해볼까요?` : `댓글을 입력하세요`}
-                  className="w-full p-3 outline-none text-black dark:text-white bg-white dark:bg-gray-900"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
+                    placeholder={comments.length === 0 ? `첫 댓글을 작성해볼까요?` : `댓글을 입력하세요`}
+                    className="w-full p-3 outline-none text-black dark:text-white bg-white dark:bg-gray-900"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
                 />
                 <div className="flex justify-between items-center px-3 py-2 ">
                   <div className="flex space-x-3">
@@ -167,15 +234,18 @@ export default function View() {
                     </button>
                   </div>
                   <button
-                    className="bg-blue-100 text-blue-500 px-4 py-1 rounded-md hover:bg-blue-200"
-                    onClick={handleSaveComment}
-                    disabled={!comment}
+                      className="bg-blue-100 text-blue-500 px-4 py-1 rounded-md hover:bg-blue-200"
+                      onClick={handleSaveComment}
+                      disabled={!comment}
                   >
                     답장
                   </button>
                 </div>
+                </div>
               </div>
-            </div>
+              )
+            }
+
 
             {/* Comments section */}
             <div className="p-4">
@@ -208,14 +278,14 @@ export default function View() {
                 {/* comment */}
                 {comments.length > 0 ? (
                     comments.map((e, index) =>  (
-                      <>
+                      <div key={index}>
                         <Comment
                           id={e.userId}
                           name={e.name}
                           createdAt={e.createdAt}
                           content={e.content}
                         />
-                      </>
+                      </div>
                     ))
                   ) : (
                     <>댓글이 없습니다.</>

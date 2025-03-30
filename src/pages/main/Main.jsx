@@ -1,11 +1,13 @@
 import React, {useEffect, useRef, useState} from "react";
 import {Link} from "react-router-dom";
-
 import {getPosts} from "./post/service/postService.js";
 
 export default function Main() {
+  // 페이지 정렬 기준
+  const [order, setOrder] = useState(localStorage.getItem("order") || "NEW");
+
+  // 사용자 데이터
   const [postSummaryList, setPostSummaryList] = useState([]);
-  const [activeTab, setActiveTab] = useState("new");
 
   // 스크롤 상태 제어
   const [loading, setLoading] = useState(false);
@@ -15,7 +17,7 @@ export default function Main() {
 
   // 초기 데이터
   useEffect(() => {
-    handlePosts(null);
+    handlePosts(null, order);
   }, []);
 
   // IntersectionObserver (스크롤 설정)
@@ -42,21 +44,18 @@ export default function Main() {
     };
   }, [loading]);
 
-  const handlePosts = async (cursor) => {
+  const handlePosts = async (cursor, order) => {
     if (!hasMoreRef.current || loading) { // 중복 조회 방지
       return;
     }
     try {
       setLoading(true);
-      const response = await getPosts(cursor);
-      if (response.error) {
-        throw new Error(`게시글 로드 에러 발생, status : ${response.status}, message : ${response.error}`)
-      }
+      const response = await getPosts(cursor, order);
       setPostSummaryList((prev) => [...prev, ...response.postSummaryList]);
       hasMoreRef.current = response.hasMore;
       nextCursorRef.current = response.nextCursor;
     } catch (error) {
-      console.error("게시글 로드 실패 : ", error);
+      console.error(`게시글 로드 실패 : ${error}`);
     } finally {
       setLoading(false);
     }
@@ -65,14 +64,17 @@ export default function Main() {
   // 탭 데이터 배열
   const orderBtnDefaultStyles = "px-4 py-3 text-sm font-medium dark:text-white"
   const tabs = [
-    {id: "new", label: "newest"},
-    {id: "hot", label: "hotest"},
+    {id: "NEW", label: "최신순"},
+    {id: "VIEW", label: "조회순"},
     // 필요하면 더 추가 가능
   ];
 
   useEffect(() => {
-    // todo : 게시판 정렬 기능
-  }, [activeTab])
+    localStorage.setItem("post-order", order);
+    hasMoreRef.current = !hasMoreRef.current;
+    setPostSummaryList([]);
+    handlePosts(null, order);
+  }, [order])
 
   return (
     <>
@@ -83,11 +85,11 @@ export default function Main() {
             <button
               key={tab.id}
               className={`${orderBtnDefaultStyles} ${
-                activeTab === tab.id
+                order === tab.id
                   ? "border-b-2 border-blue-600 text-blue-600"
                   : "text-gray-600"
               }`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => setOrder(tab.id)}
             >
               {tab.label}
             </button>
