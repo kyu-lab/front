@@ -1,4 +1,4 @@
-import customAxios from "../../../../utils/customAxios.js";
+import customAxios from "../utils/customAxios.js";
 
 const API_URL = '/group';
 

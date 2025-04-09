@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 
-import {login} from "./service/usersService.js";
+import {login} from "../../../service/usersService.js";
 import uiStore from "../../../utils/uiStore.js";
 import userStore from "../../../utils/userStore.js";
 import {alertStatus} from "../../../utils/enums.js";

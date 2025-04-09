@@ -52,7 +52,7 @@ const uiStore = create((set, get) => ({
     },
   },
   loading: {
-    isOpen: false,
+    isLoading: false,
     isFullScreen: false,
     openLoading: ({isFullScreen}) => {
       if (isFullScreen === undefined || typeof isFullScreen !== "boolean") {
@@ -143,7 +143,7 @@ const uiStore = create((set, get) => ({
         type = promptStatus.SUCCESS;
       }
 
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         set({
           prompt: {
             ...get().prompt,

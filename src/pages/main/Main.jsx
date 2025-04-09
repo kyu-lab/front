@@ -1,31 +1,51 @@
 import React, {useEffect, useRef, useState} from "react";
 import {Link} from "react-router-dom";
-import {getPosts} from "./post/service/postService.js";
+import {getPosts} from "../../service/postService.js";
+import Loading from "../../components/Loading.jsx";
+import uiStore from "../../utils/uiStore.js";
+import UserImg from "../../components/UserImg.jsx";
+import {formatRelativeTime} from "../../utils/dateUtils.js";
 
 export default function Main() {
   // 페이지 정렬 기준
-  const [order, setOrder] = useState(localStorage.getItem("order") || "NEW");
+  const [order, setOrder] = useState(localStorage.getItem("order") || "N");
 
   // 사용자 데이터
   const [postSummaryList, setPostSummaryList] = useState([]);
 
   // 스크롤 상태 제어
-  const [loading, setLoading] = useState(false);
   const nextCursorRef = useRef(null); // 다음 커서 관리
   const hasMoreRef = useRef(true); // 더 불러올 데이터가 있는지
   const observerRef = useRef(null);
 
-  // 초기 데이터
+  // ui제어
+  const {isLoading, openLoading, closeLoading} = uiStore(state => state.loading);
+
+  // 탭 데이터 배열
+  const tabs = [
+    {id: "N", label: "최신순"},
+    {id: "V", label: "조회순"},
+    // 필요하면 더 추가 가능
+  ];
+
+  // 탭 변경시 게시글 목록을 다시 호출함
   useEffect(() => {
-    handlePosts(null, order);
-  }, []);
+    localStorage.setItem("post-order", order);
+    hasMoreRef.current = true;
+    setPostSummaryList([]);
+    nextCursorRef.current = null;
+    void handlePosts();
+  }, [order]);
 
   // IntersectionObserver (스크롤 설정)
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loading && hasMoreRef.current) {
-          handlePosts(nextCursorRef.current);
+        if (isLoading) {
+          return;
+        }
+        if (entries[0].isIntersecting && hasMoreRef.current) {
+          void handlePosts();
         }
       },
       {
@@ -42,49 +62,32 @@ export default function Main() {
         observer.unobserve(observerRef.current);
       }
     };
-  }, [loading]);
+  }, []);
 
-  const handlePosts = async (cursor, order) => {
-    if (!hasMoreRef.current || loading) { // 중복 조회 방지
+  const handlePosts = async () => {
+    if (!hasMoreRef.current || isLoading) { // 중복 조회 방지
       return;
     }
     try {
-      setLoading(true);
-      const response = await getPosts(cursor, order);
+      const response = await getPosts(nextCursorRef.current, order);
       setPostSummaryList((prev) => [...prev, ...response.postSummaryList]);
       hasMoreRef.current = response.hasMore;
       nextCursorRef.current = response.nextCursor;
     } catch (error) {
       console.error(`게시글 로드 실패 : ${error}`);
     } finally {
-      setLoading(false);
     }
   };
-
-  // 탭 데이터 배열
-  const orderBtnDefaultStyles = "px-4 py-3 text-sm font-medium dark:text-white"
-  const tabs = [
-    {id: "NEW", label: "최신순"},
-    {id: "VIEW", label: "조회순"},
-    // 필요하면 더 추가 가능
-  ];
-
-  useEffect(() => {
-    localStorage.setItem("post-order", order);
-    hasMoreRef.current = !hasMoreRef.current;
-    setPostSummaryList([]);
-    handlePosts(null, order);
-  }, [order])
 
   return (
     <>
       {/* 정렬 헤더 */}
-      <div className="border-b border-gray-700 flex items-center px-4">
+      <div className="border-b border-gray-700 flex items-center">
         <div className="flex">
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              className={`${orderBtnDefaultStyles} ${
+              className={`px-4 py-3 text-sm font-medium dark:text-white ${
                 order === tab.id
                   ? "border-b-2 border-blue-600 text-blue-600"
                   : "text-gray-600"
@@ -102,47 +105,63 @@ export default function Main() {
         postSummaryList.length > 0 && postSummaryList.filter((item) => Object.keys(item).length > 0).length > 0 ? (
         postSummaryList
           .map((e, index) => (
-            <Link to={`/post/${e.postId}`} key={index}>
-              <PostInfo
-                userId={e.usersInfo.id}
-                username={e.usersInfo.name}
-                createdAt={e.createdAt}
-                summary={e.summary}
-                postViewCount={e.postViewCount}
-                commentCount={e.commentCount}
-              />
-            </Link>
+            <div
+              key={index}
+              className="py-3"
+            >
+              <Link to={`/post/${e.postId}`}>
+                <PostInfo
+                  userInfo={e.usersInfo}
+                  createdAt={e.createdAt}
+                  subject={e.subject}
+                  summary={e.summary}
+                  postViewCount={e.postViewCount}
+                  commentCount={e.commentCount}
+                />
+              </Link>
+            </div>
           ))
         ) : (
-          // 게시물이 없다면
           <div className="flex items-center justify-center h-full min-h-[calc(100vh-100px)] text-gray-500 text-center px-4">
-            게시글이 없어요..
+            {/* 스켈레톤이 들어가야함 */}
+            <Loading />
           </div>
         )
       }
 
-      <div ref={observerRef} className="flex items-center justify-center h-full min-h-[calc(70vh-100px)] text-gray-500 text-center px-4">
-        {!hasMoreRef && <p>더 이상 게시글이 없습니다...</p>}
+      <div ref={observerRef} className="flex items-center justify-center h-full text-gray-500 text-center px-4">
+        {(postSummaryList.length > 0 && hasMoreRef) && <p>마지막 게시글입니다.</p>}
+        {isLoading && <Loading />}
       </div>
     </>
   );
 }
 
-const PostInfo = ({userId, username, createdAt, summary, postViewCount, commentCount}) => {
+const PostInfo = ({userInfo, subject, createdAt, summary, postViewCount, commentCount}) => {
   return (
-    <div className="p-6 shadow">
+    <div className="p-6 shadow rounded-2xl bg-white dark:bg-gray-800">
       <div className="flex space-x-3">
+        {/* 작성자 이미지 */}
         <div className="flex-shrink-0">
-          <div className="h-10 w-10 rounded-full bg-gray-300"></div>
+          <UserImg imgUrl={userInfo.imgUrl} />
         </div>
         <div className="min-w-0 flex-1">
+          {/* 게시글 작성자 및 작성 시간 */}
           <div className="flex items-center space-x-1">
-            <span className="font-bold text-gray-900 dark:text-white">{username}</span>
+            <span className="font-bold text-gray-900 dark:text-white">{userInfo.name}</span>
           </div>
-          <p className="text-gray-900 dark:text-white mt-1">{summary}</p>
-          <div className="mt-2 rounded-xl overflow-hidden border border-gray-200">
-            {/* 사용자 이미지 */}
+          <div className="flex items-center space-x-1">
+            <span className="font-bold text-gray-900 dark:text-white">{formatRelativeTime(createdAt)}</span>
           </div>
+          
+          {/* 제목 */}
+          <h1 className="font-bold text-gray-900 text-xl dark:text-white mt-2">{subject}</h1>
+          
+          {/* 요악 본문 */}
+          {summary && <p className="text-gray-900 dark:text-white mt-4">{summary}</p>}
+          
+          {/* 구분선 */}
+          <div className="mt-2 rounded-xl overflow-hidden border border-gray-200" />
           <div className="flex items-center justify-between mt-3">
             <div className="flex items-center space-x-1 text-gray-500">
               <button className="p-1 rounded-full">
@@ -153,7 +172,7 @@ const PostInfo = ({userId, username, createdAt, summary, postViewCount, commentC
               <span className="text-sm">{commentCount}</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-500">
-              <button 
+              <button
                 className="p-1 rounded-full"
                 onClick={e => {
                   e.preventDefault();

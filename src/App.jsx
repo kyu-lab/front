@@ -1,5 +1,5 @@
-import {Outlet, Route, Routes, useLocation} from "react-router-dom";
-import React, {useEffect, useState} from "react";
+import {Outlet, Route, Routes,} from "react-router-dom";
+import React, {useEffect} from "react";
 
 import userStore from './utils/userStore.js';
 import uiStore from "./utils/uiStore.js";
@@ -17,11 +17,13 @@ import Main from "./pages/main/Main.jsx";
 import Error500 from "./pages/error/Error500.jsx";
 import Write from "./pages/main/post/Write.jsx";
 import View from "./pages/main/post/View.jsx";
+import UsersInfo from "./pages/header/users/UsersInfo.jsx";
+import NoticesView from "./pages/header/Notification/NoticesView.jsx";
 
 export default function App() {
   const isDesktop = useMediaQuery({minWidth: 768});
   const {setUp, reset} = userStore(state => state);
-  const {isOpen, openLoading, closeLoading} = uiStore(state => state.loading);
+  const {isLoading, openLoading, closeLoading} = uiStore(state => state.loading);
 
   // 앱 초기 세팅
   useEffect(() => {
@@ -40,12 +42,12 @@ export default function App() {
         document.documentElement.classList.add(theme);
       }
 
-      // 2. 사용자 데이터 설정
+      // 2. 사용자 데이터 설정 (로그인 유저라면)
       if (localStorage.getItem("token")) {
         try {
           await setUp(); // 비동기 작업 완료 대기
         } catch (error) {
-          console.log(`사용자 앱초기화 실패, ${error}`);
+          console.error(`사용자 앱초기화 실패, ${error}`);
           reset();
         }
       } else {
@@ -61,49 +63,51 @@ export default function App() {
   }, [openLoading, closeLoading]);
 
   // userStore 동기화 대기용
-  if (isOpen) {
+  if (isLoading) {
     return <Loading />;
   }
 
   // 메인 화면 디자인
   const Layout = () => {
     return (
-      <main className="w-full max-w-2xl md:max-w-3xl lg:max-w-4xlxl rounded-3xl bg-white dark:bg-gray-800 min-h-screen">
-        <div className="pb-4">
-          <Outlet />
+      <div className="flex flex-grow py-5 bg-gray-100 dark:bg-gray-900">
+        <div className="w-0 md:w-64 p-4 fixed lg:static shrink-0" />
+        <div className="flex flex-grow justify-center">
+          <main className="w-full max-w-2xl md:max-w-3xl lg:max-w-4xlxl">
+            <div>
+              <Outlet />
+            </div>
+          </main>
+          <div className="hidden lg:block">
+            <RightSidebar />
+          </div>
         </div>
-      </main>
+      </div>
     )
   }
 
   return (
     <>
-      <div className="relative min-h-screen bg-gray-200 dark:bg-gray-900">
+      <div className="relative min-h-screen dark:bg-gray-900">
         <Header />
-        <div className="flex flex-grow py-10">
-          <div className="w-0 md:w-64 p-4 fixed lg:static shrink-0" />
-          <div className="flex flex-grow justify-center">
-            <Routes>
-              {/* 메인 화면 라우팅 */}
-              <Route element={<Layout />}>
-                <Route path='/' element={<Main />} />
-                <Route path='/write' element={<Write />} />
-                <Route path='/post/:id' element={<View />} />
-                <Route path='/post/:id/update' element={<Write />} />
-              </Route>
+          <Routes>
+            {/* 메인 화면 라우팅 */}
+            <Route element={<Layout />}>
+              <Route path='/' element={<Main />} />
+              <Route path='/write' element={<Write />} />
+              <Route path='/post/:id' element={<View />} />
+              <Route path='/post/:id/update' element={<Write />} />
+              <Route path='/notices' element={<NoticesView />} />
+            </Route>
 
-              {/* 사용자 화면 */}
-              <Route path='/user/:username/info' element={<UsersSettings />} />
+            {/* 사용자 페이지 */}
+            <Route path='/user/settings/:page' element={<UsersSettings />} />
+            <Route path='/user/:id/info' element={<UsersInfo />} />
 
-              {/* 에러페이지 */}
-              <Route path='/error404' element={<Error404 />} />
-              <Route path='/error500' element={<Error500 />} />
-            </Routes>
-            <div className="hidden lg:block">
-              <RightSidebar />
-            </div>
-          </div>
-        </div>
+            {/* 에러페이지 */}
+            <Route path='/error404' element={<Error404 />} />
+            <Route path='/error500' element={<Error500 />} />
+          </Routes>
         <footer className="text-xs text-gray-500 p-4 text-center">
           This is footer<br /> WriteHere © 2025. All rights reserved.
         </footer>
@@ -116,5 +120,4 @@ export default function App() {
     </>
   );
 };
-
 

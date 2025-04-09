@@ -2,9 +2,9 @@ import React from "react";
 import uiStore from "../utils/uiStore.js";
 
 export default function Loading() {
-  const {isOpen, isFullScreen} = uiStore(state => state.loading);
+  const {isLoading, isFullScreen} = uiStore(state => state.loading);
 
-  if (!isOpen) {
+  if (!isLoading) {
     return null;
   }
 

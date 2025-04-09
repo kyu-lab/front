@@ -7,7 +7,7 @@ import {
   validationEmail,
   validationName,
   validationPassword
-} from "./service/usersService.js";
+} from "../../../service/usersService.js";
 import uiStore from "../../../utils/uiStore.js";
 import {alertStatus} from "../../../utils/enums.js";
 

@@ -1,11 +1,11 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import Editor from "../../../utils/Editor.jsx";
-import {getPost, savePost, updatePost} from "./service/postService.js";
+import {getPost, savePost, updatePost} from "../../../service/postService.js";
 import {useNavigate, useParams} from "react-router-dom";
 import uiStore from "../../../utils/uiStore.js";
 import userStore from "../../../utils/userStore.js";
 import {alertStatus} from "../../../utils/enums.js";
-import {getGroup} from "./service/groupService.js";
+import {getGroup} from "../../../service/groupService.js";
 
 export default function Write() {
   // 파라미터
@@ -25,7 +25,10 @@ export default function Write() {
 
   // ui 제어
   const {openAlert} = uiStore((state) => state.alert);
-  const {userInfo, isLogin} = userStore(state => state);
+  const {isLogin} = userStore(state => state);
+
+  // 에디터 제어
+  const editorRef = useRef(null);
 
   useEffect(() => {
     if (!isLogin) {
@@ -33,7 +36,7 @@ export default function Write() {
     }
 
     if (id === null || id === undefined) {
-      getGroupList().then(() => console.log('group load success'));
+      getGroupList();
     } else {
       const getPostInfo= async () => {
         try {
@@ -41,7 +44,6 @@ export default function Write() {
           const postInfo = response.postDetail;
           setSubject(postInfo.subject);
           setContent(postInfo.content);
-          setIsWrite(true);
           setIsUpdate(true);
         } catch (error) {
           openAlert({message: "잠시 후 다시 접속해주세요", type: alertStatus.ERROR});
@@ -69,15 +71,21 @@ export default function Write() {
 
   const handleSavePost = async () => {
     try {
+      if (subject.length === 0) {
+        openAlert({message: "제목을 입력해주세요", type: alertStatus.INFO});
+        return;
+      }
+
       const requestData = {
-        userId: userInfo.id,
         groupId: groupId,
         subject: subject,
-        content: content
+        content: editorRef.current.getHTML(),
+        imgList: editorRef.current.getImgList()
       }
       const respnose = await savePost(requestData);
-      if (respnose.status === 200) {
+      if (respnose.status === 201) {
         navigate(respnose.headers.get("Location"));
+        openAlert({message: "게시글이 등록되었습니다.", type: alertStatus.SUCCESS});
       }
     } catch (error) {
       console.error("게시글 저장 실패 :", error);
@@ -88,11 +96,10 @@ export default function Write() {
   const handleUpdatePost = async () => {
     try {
       const requestData = {
-        userId: userInfo.id,
         postId: id,
         groupId: groupId,
         subject: subject,
-        content: content
+        content: editorRef.current.getHTML()
       }
       const respnose = await updatePost(requestData);
       navigate(respnose.headers.get("Location"));
@@ -165,8 +172,8 @@ export default function Write() {
       {/* 에디터 */}
       <Editor
         content={content}
-        setContent={setContent}
         editable={true}
+        ref={editorRef}
       />
 
       {/* 버튼 */}

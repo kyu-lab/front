@@ -29,7 +29,7 @@ export default function RecentPosts() {
 
   return (
     <aside className="sticky top-14 z-10 w-72 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-md p-4 mb-4">
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-md p-4 mb-4">
         <div className="flex items-center justify-between mb-4">
           <span className="text-blue-500 dark:text-blue-400 uppercase font-bold text-sm">
             Recent Post

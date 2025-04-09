@@ -1,6 +1,7 @@
 import React from "react";
 import {useLocation} from "react-router-dom";
 import RecentPosts from "./right/RecentPosts.jsx";
+import AuthorInfo from "./right/AuthorInfo.jsx";
 
 export default function RightSidebar() {
   const location = useLocation();
@@ -29,19 +30,3 @@ export const Block = () => {
   )
 }
 
-export const AuthorInfo = () => {
-  return (
-    <aside className="sticky top-14 z-10 w-72 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-md p-4 mb-4">
-        <div>
-          <h2 className="text-sm font-medium mb-2">작성자 소개</h2>
-        </div>
-        <div className="space-y-4">
-          <div className="flex items-start gap-2">
-            안녕하세요
-          </div>
-        </div>
-      </div>
-    </aside>
-  )
-}

@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 
-import {changePassword, existsEmail, login, validationEmail, validationPassword} from "./service/usersService.js";
+import {changePassword, existsEmail, login, validationEmail, validationPassword} from "../../../service/usersService.js";
 import uiStore from "../../../utils/uiStore.js";
 import {alertStatus} from "../../../utils/enums.js";
 
@@ -115,7 +115,7 @@ export default function UsersResetPassword({setHasPrevious, setPage}) {
     }
   }, [step, setOnBack])
 
-  // 회원가입 처리 함수
+  // 비밀번호 변경 처리 함수
   const handleChangePassword = async () => {
     try {
       if (!validationEmail({email, setEmailValidationError})) {

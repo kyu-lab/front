@@ -1,9 +1,10 @@
-import customAxios from "../../../../utils/customAxios.js";
+import customAxios from "../utils/customAxios.js";
 
 const API_URL = '/post';
 
 export async function getPosts(cursor, order) {
-  const response = await customAxios.get(`${API_URL}?cursor=${cursor}&order=${order}`);
+  const requestUrl = cursor === null ? `${API_URL}?order=${order}` : `${API_URL}?cursor=${cursor}&order=${order}`;
+  const response = await customAxios.get(requestUrl);
   if (response.status === 200) {
     return response.data;
   }

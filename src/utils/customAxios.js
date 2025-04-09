@@ -48,7 +48,6 @@ const refreshAccessToken = async () => {
     const response = await customAxios.get("/users/refresh", {
       headers: {"X-Needs-Refresh": "true"},
     });
-    debugger;
     localStorage.setItem("token", response.data.token);
   } catch (error) {
     console.error("Refresh Token Request Failed", error);

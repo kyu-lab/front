@@ -1,4 +1,4 @@
-import customAxios from "../../../../utils/customAxios.js";
+import customAxios from "../utils/customAxios.js";
 import validator from "validator/es";
 
 const API_URL = '/users'
@@ -108,7 +108,18 @@ export async function changePassword(passwordReq) {
   return await customAxios.post(`${API_URL}/change/password`, passwordReq);
 }
 
-
 export async function update(id, updateReq) {
   return await customAxios.put(`${API_URL}/${id}/update`, updateReq);
+}
+
+export async function getUserInfo(id) {
+  return await customAxios.get(`${API_URL}/${id}/info`);
+}
+
+export async function getUserSetting(page) {
+  return await customAxios.get(`${API_URL}/settings/${page}`);
+}
+
+export async function deleteUser() {
+  return await customAxios.delete(`${API_URL}`)
 }

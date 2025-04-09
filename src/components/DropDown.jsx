@@ -1,9 +1,8 @@
-export default function DropDown({ profileStatus, children }) {
+export default function DropDown({menuOpen, children}) {
   return (
     <div
-      className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-lg z-10"
-      style={{ display: profileStatus ? "block" : "none" }}
-      onMouseLeave={() => profileStatus(false)}
+      className="absolute right-0 mt-2 w-56 z-10"
+      style={{display: menuOpen ? "block" : "none"}}
     >
       {/* 동적 콘텐츠 */}
       {children}

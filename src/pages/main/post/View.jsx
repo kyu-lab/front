@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {deletePost, getPost} from "./service/postService.js";
+import {deletePost, getPost} from "../../../service/postService.js";
 import {useNavigate, useParams} from "react-router-dom";
 import Editor from "../../../utils/Editor.jsx";
-import {getComments, saveComment} from "./service/commentService.js";
+import {getComments, saveComment} from "../../../service/commentService.js";
 import {alertStatus, promptStatus} from "../../../utils/enums.js";
 import uiStore from "../../../utils/uiStore.js";
 import userStore from "../../../utils/userStore.js";
+import UserImg from "../../../components/UserImg.jsx";
 
 export default function View() {
   // 파라미터
@@ -52,7 +53,7 @@ export default function View() {
         setComments((prevComments) => [...prevComments, ...commentResponose]);
 
         // 글 수정권한 및 삭제 부여
-        if (userInfo.id == postResponose.usersInfo.id) {
+        if (userInfo.id === postResponose.usersInfo.id) {
           setCanEdit(true);
         }
 
@@ -64,7 +65,8 @@ export default function View() {
           },
           writer: {
             id: postResponose.usersInfo.id,
-            name: postResponose.usersInfo.name
+            name: postResponose.usersInfo.name,
+            imgUrl: postResponose.usersInfo.imgUrl
           }
         }
 
@@ -144,9 +146,7 @@ export default function View() {
             <div className="sticky top-14 z-10 bg-white dark:bg-gray-800 shadow rounded-t-2xl">
               <div className="flex justify-between items-center p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 overflow-hidden flex items-center justify-center">
-                    사용자 이미지
-                  </div>
+                    <UserImg imgUrl={writer.imgUrl} />
                   <div>
                     <h3 className="font-medium text-gray-800 dark:text-white">{writer.name}</h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{post.createdAt}</p>
@@ -300,8 +300,6 @@ export default function View() {
 }
 
 const Comment = ({key, userId, name, createdAt, content}) => {
-  const [id, setId] = useState(userId);
-
   return (
     <div key={key} className="mb-4 border-dashed">
       <div className="flex justify-between">
