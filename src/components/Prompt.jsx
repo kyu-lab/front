@@ -1,28 +1,22 @@
 import uiStore from "../utils/uiStore.js";
-import {alertStatus} from "../utils/enums.js";
+import {promptStatus} from "../utils/enums.js";
 
-export default function Alert() {
-  const {isOpen, message, autoClose, closeTime, type, closeAlert} = uiStore(state => state.alert);
+export default function Prompt() {
+  const {isOpen, message, type, closePrompt, onConfirm, onCancel} = uiStore((state) => state.prompt);
 
   if (!isOpen) {
     return null;
   }
 
-  if (isOpen && autoClose) {
-    setTimeout(() => {
-      closeAlert();
-    }, closeTime * 1000) // 초단위
-  }
-
   let img;
   switch (type) {
-    case alertStatus.ERROR:
+    case promptStatus.ERROR:
       img = <FailImg/>
       break;
-    case alertStatus.WARN:
+    case promptStatus.WARN:
       img = <WarnImg/>
       break;
-    case alertStatus.INFO:
+    case promptStatus.INFO:
       img = <InfoImg/>
       break;
     default:
@@ -30,9 +24,25 @@ export default function Alert() {
       break;
   }
 
+  // "Yes" 선택 시 콜백 호출
+  const handleYesClick = () => {
+    if (onConfirm) {
+      onConfirm(); // true를 반환
+    }
+    closePrompt();
+  };
+
+  // "No" 선택 시 콜백 호출
+  const handleNoClick = () => {
+    if (onCancel) {
+      onCancel(); // false를 반환
+    }
+    closePrompt();
+  };
+
   return (
     <div
-      role="alert"
+      role="prompt"
       className="fixed top-5 left-1/2 transform -translate-x-1/2 rounded-md border border-gray-300 bg-white dark:bg-gray-800 p-4 shadow-sm z-50 max-w-md w-full"
     >
       <div className="flex items-start gap-4">
@@ -40,15 +50,32 @@ export default function Alert() {
 
         <div className="flex-1">
           <p className="mt-0.5 text-sm text-gray-700 dark:text-white">{message}</p>
+
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              onClick={handleYesClick}
+              type="button"
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
+            >
+              Yes
+            </button>
+            <button
+              onClick={handleNoClick}
+              type="button"
+              className="rounded border border-transparent px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:text-gray-900"
+            >
+              No
+            </button>
+          </div>
         </div>
 
         <button
-          onClick={closeAlert}
+          onClick={closePrompt}
           className="-m-1 rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
           type="button"
           aria-label="Dismiss alert"
         >
-          <span className="sr-only">Close Alert</span>
+          <span className="sr-only">Close Prompt</span>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"

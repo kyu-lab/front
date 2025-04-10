@@ -4,10 +4,11 @@ import {jwtDecode} from 'jwt-decode';
 const userStore = create((set) => ({
   userInfo: {
     id: '',
-    name: ''
+    name: '',
+    imgUrl: '',
   },
   isLogin: false,
-  setUp: () => {
+  setUp: async () => {
     const token = localStorage.getItem("token");
     if (!token || typeof token !== 'string') {
       return;
@@ -17,7 +18,8 @@ const userStore = create((set) => ({
       set({
         userInfo: {
           id: payload.sub,
-          name: payload.userName
+          name: payload.name,
+          imgUrl: payload.imgUrl
         },
         isLogin: true,
       });

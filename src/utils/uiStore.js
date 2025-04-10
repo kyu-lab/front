@@ -1,5 +1,5 @@
 import {create} from 'zustand';
-import {alertStatus} from "./enums.js";
+import {alertStatus, promptStatus} from "./enums.js";
 
 const uiStore = create((set, get) => ({
   alert: {
@@ -52,7 +52,7 @@ const uiStore = create((set, get) => ({
     },
   },
   loading: {
-    isOpen: false,
+    isLoading: false,
     isFullScreen: false,
     openLoading: ({isFullScreen}) => {
       if (isFullScreen === undefined || typeof isFullScreen !== "boolean") {
@@ -125,7 +125,55 @@ const uiStore = create((set, get) => ({
         }
       })
     },
-  }
+  },
+  prompt: {
+    isOpen: false,
+    message: '',
+    onConfirm: null, // "Yes" 버튼 클릭 시 호출될 콜백 정의
+    onCancel: null,  // "No" 버튼 클릭 시 호출될 콜백 정의
+    type: promptStatus.SUCCESS,
+    openPrompt: ({message, type}) => {
+      if (typeof message !== "string") {
+        alert('잘못된 방식입니다.');
+        console.error(`전달된 메시지 방식 : ${typeof message}`);
+        return;
+      }
+
+      if (typeof type !== "string") {
+        type = promptStatus.SUCCESS;
+      }
+
+      return new Promise((resolve) => {
+        set({
+          prompt: {
+            ...get().prompt,
+            isOpen: true,
+            message,
+            type: type,
+            onConfirm: () => resolve(true),
+            onCancel: () => resolve(false)
+          }
+        })
+      })
+    },
+    closePrompt: () => {
+      const {onCancel} = get().prompt;
+      if (onCancel) { // X 버튼 클릭 시
+        onCancel();
+      }
+      set({
+        prompt: {
+          ...get().prompt,
+          isOpen: false,
+          message: '',
+          isUseButton: false,
+          type: promptStatus.SUCCESS,
+          onConfirm: null,
+          onCancel: null,
+        }
+      })
+    },
+  },
 }));
 
 export default uiStore;

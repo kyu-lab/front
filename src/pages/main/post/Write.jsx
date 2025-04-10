@@ -1,54 +1,107 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import Editor from "../../../utils/Editor.jsx";
-import {savePost} from "./service/postService.js";
-import {useNavigate} from "react-router-dom";
+import {getPost, savePost, updatePost} from "../../../service/postService.js";
+import {useNavigate, useParams} from "react-router-dom";
 import uiStore from "../../../utils/uiStore.js";
 import userStore from "../../../utils/userStore.js";
 import {alertStatus} from "../../../utils/enums.js";
-import {getGroup} from "./service/groupService.js";
+import {getGroup} from "../../../service/groupService.js";
 
 export default function Write() {
+  // 파라미터
+  const {id} = useParams();
+
+  // 페이지 이동
   const navigate = useNavigate();
+
+  // 사용자 데이터
   const [groups, setGroups] = useState([]);
   const [groupId, setGroupId] = useState('');
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
+
+  // 컴포넌트 제어
+  const [isUpdate, setIsUpdate] = useState(false);
+
+  // ui 제어
   const {openAlert} = uiStore((state) => state.alert);
-  const {userInfo, isLogin} = userStore(state => state);
+  const {isLogin} = userStore(state => state);
+
+  // 에디터 제어
+  const editorRef = useRef(null);
 
   useEffect(() => {
     if (!isLogin) {
-      openAlert({message: "로그인 후에 글 작성이 가능합니다.", type: alertStatus.WARN});
       navigate("/");
     }
 
-    const getGroupList = async () => {
-      try {
-        const userId = userInfo.id;
-        if (userId === undefined || userId === null) {
-          return;
+    if (id === null || id === undefined) {
+      getGroupList();
+    } else {
+      const getPostInfo= async () => {
+        try {
+          const response = await getPost(id);
+          const postInfo = response.postDetail;
+          setSubject(postInfo.subject);
+          setContent(postInfo.content);
+          setIsUpdate(true);
+        } catch (error) {
+          openAlert({message: "잠시 후 다시 접속해주세요", type: alertStatus.ERROR});
+          console.error("게시글 저장 실패 :", error);
         }
-        const groupList = await getGroup(userId);
+      }
+
+      getPostInfo().then(() => getGroupList());
+    }
+  }, []);
+
+  const getGroupList = async () => {
+    try {
+      const response = await getGroup();
+      if (response.status === 200) {
+        const groupList = response.data;
         setGroups((prev) => [...prev, ...groupList]);
         setGroupId(groupList[0].id);
-      } catch (error) {
-        openAlert({message: "잠시 후 다시 접속해주세요", type: alertStatus.ERROR});
-        console.error("게시글 저장 실패 :", error);
       }
+    } catch (error) {
+      console.error(error);
+      openAlert({message: "잠시 후 다시 접속해주세요", type: alertStatus.ERROR});
     }
-
-    getGroupList();
-  }, [])
+  }
 
   const handleSavePost = async () => {
     try {
+      if (subject.length === 0) {
+        openAlert({message: "제목을 입력해주세요", type: alertStatus.INFO});
+        return;
+      }
+
       const requestData = {
-        userId: userInfo.id,
         groupId: groupId,
         subject: subject,
-        content: content
+        content: editorRef.current.getHTML(),
+        imgList: editorRef.current.getImgList()
       }
       const respnose = await savePost(requestData);
+      if (respnose.status === 201) {
+        navigate(respnose.headers.get("Location"));
+        openAlert({message: "게시글이 등록되었습니다.", type: alertStatus.SUCCESS});
+      }
+    } catch (error) {
+      console.error("게시글 저장 실패 :", error);
+      navigate('/error404');
+    }
+  }
+
+  const handleUpdatePost = async () => {
+    try {
+      const requestData = {
+        postId: id,
+        groupId: groupId,
+        subject: subject,
+        content: editorRef.current.getHTML()
+      }
+      const respnose = await updatePost(requestData);
       navigate(respnose.headers.get("Location"));
     } catch (error) {
       openAlert({message: "잠시 후 다시 등록해주세요.", type: alertStatus.ERROR});
@@ -58,7 +111,9 @@ export default function Write() {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-white">글 작성</h2>
+      <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-white">
+        {isUpdate ? `글 수정` : '글 작성'}
+      </h2>
 
       {/* 그룹 선택 */}
       <section className='dark:bg-dark'>
@@ -76,11 +131,11 @@ export default function Write() {
                     {
                       groups.length > 0 && groups.filter((item) => Object.keys(item).length > 0).length > 0 ? (
                       groups.map((groups, index) => (
-                          <option key={index} value={groups.id}>
-                            {groups.groupStatus === 'USER' && <>사용자</>}
-                            {groups.groupStatus !== 'USER' && <>그룹</>}
-                            {groups.name}
-                          </option>
+                        <option key={index} value={groups.id}>
+                          {groups.groupStatus === 'USER' && <>사용자</>}
+                          {groups.groupStatus !== 'USER' && <>그룹</>}
+                          {groups.name}
+                        </option>
                       ))
                       ) : (
                         <></>
@@ -116,8 +171,9 @@ export default function Write() {
 
       {/* 에디터 */}
       <Editor
-        setContent={setContent}
+        content={content}
         editable={true}
+        ref={editorRef}
       />
 
       {/* 버튼 */}
@@ -128,9 +184,9 @@ export default function Write() {
         {/*</button>*/}
         <button
           className="bg-blue-50 text-blue-500 px-4 py-2 rounded-full"
-          onClick={handleSavePost}
+          onClick={isUpdate ? handleUpdatePost : handleSavePost}
         >
-          게시
+          {isUpdate ? `수정` : '게시'}
         </button>
       </div>
     </div>
