@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {deletePost, getPost} from "../../../service/postService.js";
 import {useNavigate, useParams} from "react-router-dom";
-import Editor from "../../../utils/Editor.jsx";
+import Editor from "../../../components/Editor.jsx";
 import {getComments, saveComment} from "../../../service/commentService.js";
 import {alertStatus, promptStatus} from "../../../utils/enums.js";
 import uiStore from "../../../utils/uiStore.js";
