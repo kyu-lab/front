@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from "react";
-import Editor from "../../../utils/Editor.jsx";
+import Editor from "../../../components/Editor.jsx";
 import {getPost, savePost, updatePost} from "../../../service/postService.js";
 import {useNavigate, useParams} from "react-router-dom";
 import uiStore from "../../../utils/uiStore.js";

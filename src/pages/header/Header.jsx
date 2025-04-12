@@ -9,10 +9,11 @@ import UsersMenu from "./users/UsersMenu.jsx";
 import userStore from "../../utils/userStore.js";
 import uiStore from "../../utils/uiStore.js";
 import Notices from "./Notification/Notices.jsx";
-import {closeEventSource, getPastNotices, setUpNoticesServer} from "../../service/noticesService.js";
+import {getPastNotices} from "../../service/noticesService.js";
 import noticesStore from "../../utils/noticesStore.js";
 import {doSearch} from "../../service/searchService.js";
 import UserImg from "../../components/UserImg.jsx";
+import {closeEventSource, setUpNoticesServer} from "../../utils/evnentSource.js";
 
 export default function Header() {
   // 화면 설정
@@ -126,7 +127,7 @@ export default function Header() {
           console.log(error);
         }
       }
-      search();
+      void search();
     }
   };
 
