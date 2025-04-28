@@ -14,6 +14,7 @@ import noticesStore from "../../utils/noticesStore.js";
 import {doSearch} from "../../service/searchService.js";
 import UserImg from "../../components/UserImg.jsx";
 import {closeEventSource, setUpNoticesServer} from "../../utils/evnentSource.js";
+import CreateMenu from "./post/CreateMenu.jsx";
 
 export default function Header() {
   // 화면 설정
@@ -29,6 +30,7 @@ export default function Header() {
 
   // 메뉴 제어
   const [isSearch, setIsSearch] = useState(false);
+  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
   const [isNotiMenuOpen, setIsNotiMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false); // 드롭다운 표시 여부
@@ -52,16 +54,25 @@ export default function Header() {
     openDialog({body: <AuthPage />, hasPrevious: true});
   }
 
+  // 생성 창 제어
+  const handleToggleCreateMenu = () => {
+    setIsCreateMenuOpen(prev => !prev);
+    setIsUserMenuOpen(false);
+    setIsNotiMenuOpen(false);
+  };
+
   // 알림 창 제어
   const handleToggleNotiMenu = () => {
     setIsNotiMenuOpen(prev => !prev);
     setIsUserMenuOpen(false);
+    setIsCreateMenuOpen(false);
   };
 
   // 사용자 창 제어
   const handleToggleUserMenu = () => {
     setIsUserMenuOpen(prev => !prev);
     setIsNotiMenuOpen(false);
+    setIsCreateMenuOpen(false);
   };
 
   // header 알림 설정
@@ -254,21 +265,30 @@ export default function Header() {
           {/* 로그인 상태에 표시되는 버튼 */}
           {
             isLogin &&
-              <>
-              {/* 작성 버튼 */}
-              <Link
-                className="p-2 rounded-full hover:bg-green-300 dark:hover:bg-green-700 cursor-pointer"
-                to={"/write"}
-              >
-                <svg className="w-5 h-5 text-black dark:text-blue-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-              </Link>
+            <>
+              {/* 생성 버튼 */}
+              <div>
+                <button
+                  className="p-2 rounded-full hover:bg-green-300 dark:hover:bg-green-700 cursor-pointer"
+                  onClick={handleToggleCreateMenu}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="w-5 h-5 text-black dark:text-blue-100">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                  </svg>
+                </button>
+
+                {/* 알림메뉴 메뉴 */}
+                {isCreateMenuOpen && <DropDown menuOpen={setIsCreateMenuOpen}><CreateMenu /></DropDown>}
+              </div>
 
               {/* 알림 버튼 */}
               <div>
@@ -298,18 +318,12 @@ export default function Header() {
               {/* 사용자 버튼 */}
               <div>
                 <button
-                  className="p-2 rounded-full hover:bg-indigo-300 dark:hover:bg-indigo-700 cursor-pointer"
+                  className="p-1 rounded-full hover:bg-indigo-300 dark:hover:bg-indigo-700 cursor-pointer"
                   onClick={handleToggleUserMenu}
                 >
-                  {userInfo.imgUrl && <UserImg imgUrl={userInfo.imgUrl} />}
-                  {!userInfo.imgUrl &&
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg" fill="none"
-                      viewBox="0 0 24 24" strokeWidth="2"
-                      stroke="currentColor" className="w-5 h-5 text-black dark:text-blue-100">
-                      <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                    </svg>
-                  }
+                  <div className="w-7 h-7">
+                    <UserImg imgUrl={userInfo.imgUrl} />
+                  </div>
                 </button>
 
                 {/* 사용자 드롭다운 메뉴 */}

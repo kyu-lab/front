@@ -14,9 +14,9 @@ export default function Main() {
   // 목록 제어
   const [order, setOrder] = useState(localStorage.getItem("order") || "N");
 
-  const [postSummaryList, setPostSummaryList] = useState([]);
-  // 스크롤 상태 제어
+  const [postItems, setPostItems] = useState([]);
 
+  // 스크롤 상태 제어
   const nextCursorRef = useRef(null); // 다음 커서 관리
   const hasMoreRef = useRef(true); // 더 불러올 데이터가 있는지
   const observerRef = useRef(null);
@@ -35,8 +35,8 @@ export default function Main() {
   // 탭 변경시 게시글 목록을 다시 호출함
   useEffect(() => {
     localStorage.setItem("post-order", order);
+    setPostItems([]);
     hasMoreRef.current = true;
-    setPostSummaryList([]);
     nextCursorRef.current = null;
     void handlePosts();
   }, [order]);
@@ -75,11 +75,14 @@ export default function Main() {
     try {
       loading.current = true;
       const response = await getPosts(nextCursorRef.current, order);
-      setPostSummaryList((prev) => [...prev, ...response.postSummaryList]);
+      if (response.postItems.length > 0) {
+        setPostItems((prev) => [...prev, ...response.postItems]);
+      }
       hasMoreRef.current = response.hasMore;
       nextCursorRef.current = response.nextCursor;
     } catch (error) {
       console.error(`게시글 로드 실패 : ${error}`);
+      navigate('/error404');
     } finally {
       loading.current = false;
     }
@@ -108,26 +111,20 @@ export default function Main() {
 
       {/* 게시물 렌더링 */}
       {
-        postSummaryList.length > 0 && postSummaryList.filter((item) => Object.keys(item).length > 0).length > 0 ? (
-        postSummaryList
-          .map((e, index) => (
-            <div
-              key={index}
-              className="py-3 px-10"
-            >
-              <Link to={`/post/${e.postId}`}>
-                <PostInfo
-                  writerInfo={e.writerInfo}
-                  createdAt={e.createdAt}
-                  subject={e.subject}
-                  summary={e.summary}
-                  postViewCount={e.postViewCount}
-                  commentCount={e.commentCount}
-                />
-              </Link>
-            </div>
-          ))
-        ) : (
+        postItems.length > 0 && postItems.filter((item) => Object.keys(item).length > 0).length > 0 ? (
+        postItems.map((e, index) => (
+          <div
+            key={index}
+            className="py-3 px-10"
+          >
+            <Link to={`/post/${e.postListItemDto.id}`}>
+              <PostInfo
+                postListItemDto={e.postListItemDto}
+                writerInfo={e.writerInfo}
+              />
+            </Link>
+          </div>
+        ))) : (
           <div className="flex items-center justify-center h-full min-h-[calc(100vh-100px)] text-gray-500 text-center px-4">
             {/* 스켈레톤이 들어가야함 */}
             <Loading />
@@ -135,8 +132,8 @@ export default function Main() {
         )
       }
 
-      <div ref={observerRef} className="flex items-center justify-center h-full text-gray-500 text-center px-4">
-        {(postSummaryList.length > 0 && hasMoreRef) && <p>마지막 게시글입니다.</p>}
+      <div ref={observerRef} className="justify-center text-gray-500 text-center p-5">
+        {(postItems.length > 0 && hasMoreRef) && <p>마지막 게시글입니다.</p>}
         {isLoading && <Loading />}
       </div>
     </>

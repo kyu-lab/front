@@ -79,16 +79,20 @@ const uiStore = create((set, get) => ({
   },
   dialog: {
     isOpen: false,
+    header: '',
     body: '',
     hasPrevious: false,
+    useMobileMode: true, // true일 경우 전체화면으로 표시된다.
     onBack: null, // 콜백함수로 정의
-    openDialog: ({body, hasPrevious}) => {
+    openDialog: ({header, body, hasPrevious, useMobileMode}) => {
       set({
         dialog : {
           ...get().dialog,
           isOpen: true,
+          header: header,
           body: body,
           hasPrevious: hasPrevious || false,
+          useMobileMode: useMobileMode,
           onBack: null,
         }
       })
@@ -98,8 +102,10 @@ const uiStore = create((set, get) => ({
         dialog : {
           ...get().dialog,
           isOpen: false,
+          header: '',
           body: '',
           hasPrevious: false,
+          useMobileMode: true,
           onBack: null
         }
       })

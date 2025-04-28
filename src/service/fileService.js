@@ -31,3 +31,18 @@ export async function uploadPostImg(imgFile) {
     throw error;
   }
 }
+
+export async function uploadGroupImg(imgFile, type) {
+  try {
+    const formData = new FormData();
+    formData.set("file", imgFile);
+    const respnose = await customAxios.post(`${FILE_API_URL}/upload/group/image?type=${type}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+    return respnose.data;
+  } catch (error) {
+    throw error;
+  }
+}

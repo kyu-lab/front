@@ -4,7 +4,7 @@ import {Link, useNavigate} from "react-router-dom";
 import {formatRelativeTime} from "../../../utils/dateUtils.js";
 import noticesStore from "../../../utils/noticesStore.js";
 
-const Notices = () => {
+export default function Notices() {
   // 페이지 이동
   const navigate = useNavigate();
 
@@ -95,5 +95,3 @@ const Notices = () => {
     </div>
   );
 };
-
-export default Notices;

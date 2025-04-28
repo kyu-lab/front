@@ -5,7 +5,7 @@ import userStore from './utils/userStore.js';
 import uiStore from "./utils/uiStore.js";
 
 import Header from "./pages/header/Header.jsx";
-import RightSidebar from "./pages/sidebar/RightSidebar.jsx";
+import RightSidebar from "./pages/sidebar/right/RightSidebar.jsx";
 import Alert from "./components/Alert.jsx";
 import Loading from "./components/Loading.jsx";
 import Dialog from "./components/Dialog.jsx";
@@ -16,9 +16,11 @@ import UsersSettings from "./pages/header/users/UsersSettings.jsx";
 import Main from "./pages/main/Main.jsx";
 import Error500 from "./pages/error/Error500.jsx";
 import Write from "./pages/main/post/Write.jsx";
-import View from "./pages/main/post/View.jsx";
 import UsersInfo from "./pages/header/users/UsersInfo.jsx";
 import NoticesView from "./pages/header/Notification/NoticesView.jsx";
+import CreateGroup from "./pages/main/group/CreateGroup.jsx";
+import GruopInfo from "./pages/main/group/GroupInfo.jsx";
+import PostView from "./pages/main/post/PostView.jsx";
 
 export default function App() {
   const isDesktop = useMediaQuery({minWidth: 768});
@@ -70,17 +72,15 @@ export default function App() {
   // 메인 화면 디자인
   const Layout = () => {
     return (
-      <div className="flex flex-grow py-5 bg-gray-100 dark:bg-gray-900">
-        <div className="w-0 md:w-64 p-4 fixed lg:static shrink-0" />
+      <div className="flex flex-grow bg-gray-100 dark:bg-gray-900 h-full">
+        <RightSidebar />
         <div className="flex flex-grow justify-center">
           <main className="w-full max-w-2xl md:max-w-3xl lg:max-w-4xlxl">
             <div>
               <Outlet />
             </div>
           </main>
-          <div className="hidden lg:block">
-            <RightSidebar />
-          </div>
+          <RightSidebar />
         </div>
       </div>
     )
@@ -95,14 +95,17 @@ export default function App() {
             <Route element={<Layout />}>
               <Route path='/' element={<Main />} />
               <Route path='/write' element={<Write />} />
-              <Route path='/post/:id' element={<View />} />
+              <Route path='/post/:id' element={<PostView />} />
               <Route path='/post/:id/update' element={<Write />} />
               <Route path='/notices' element={<NoticesView />} />
+              <Route path='/group/create' element={<CreateGroup />} />
+              <Route path='/group/:id/info' element={<GruopInfo />} />
             </Route>
 
             {/* 사용자 페이지 */}
             <Route path='/user/settings/:page' element={<UsersSettings />} />
             <Route path='/user/:id/info' element={<UsersInfo />} />
+
 
             {/* 에러페이지 */}
             <Route path='/error404' element={<Error404 />} />
