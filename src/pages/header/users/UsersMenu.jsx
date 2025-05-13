@@ -70,12 +70,17 @@ export default function UsersMenu() {
       className="absolute end-4 z-10 mt-0.5 w-56 rounded-md bg-white dark:bg-gray-800 shadow-lg"
       role="menu"
     >
-      <div className="px-4 py-2 text-black dark:text-white font-semibold border-b">
-        <div>
+      <div className="px-4 py-3 text-black dark:text-white font-semibold border-b flex items-center">
+        <div className="w-10 h-10">
           <UserImg imgUrl={userInfo.imgUrl} />
         </div>
-        <div>
-          {userInfo.name} #{userInfo.id}
+        <div className="mx-2">
+          <span className="text-lg text-gray-600 dark:text-gray-300">
+            {userInfo.name}
+          </span>
+          <span className="mx-1 text-sm text-gray-600 dark:text-gray-300">
+            #{userInfo.id}
+          </span>
         </div>
       </div>
       <div className="p-1">

@@ -89,21 +89,21 @@ export default function UsersSettings() {
   };
 
   useEffect(() => {
-    const check = async () => {
-      try {
-        const response = await getUserSetting(curPage);
-        if (response.status === 200) {
-          return response.data;
-        }
-      } catch (error) {
-        openAlert({message: "로그인 후 이용가능합니다.", type: alertStatus.ERROR});
-        navigate('/error404');
-      }
-    }
-    check().then(data => {
-      setEmail(data.email);
-      setName(data.name);
-    });
+    // const check = async () => {
+    //   try {
+    //     const response = await getUserSetting(curPage);
+    //     if (response.status === 200) {
+    //       return response.data;
+    //     }
+    //   } catch (error) {
+    //     openAlert({message: "로그인 후 이용가능합니다.", type: alertStatus.ERROR});
+    //     navigate('/error404');
+    //   }
+    // }
+    // check().then(data => {
+    //   setEmail(data.email);
+    //   setName(data.name);
+    // });
   }, [curPage]);
 
   // "변경" 버튼 클릭 시 호출되는 함수

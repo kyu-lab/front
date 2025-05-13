@@ -17,7 +17,7 @@ const userStore = create((set) => ({
       const payload = jwtDecode(token);
       set({
         userInfo: {
-          id: payload.sub,
+          id: Number(payload.sub),
           name: payload.name,
           imgUrl: payload.imgUrl
         },

@@ -5,7 +5,7 @@ import {useNavigate, useParams} from "react-router-dom";
 import uiStore from "../../../utils/uiStore.js";
 import userStore from "../../../utils/userStore.js";
 import {alertStatus} from "../../../utils/enums.js";
-import {getGroup} from "../../../service/groupService.js";
+import {getGroups} from "../../../service/groupService.js";
 
 export default function Write() {
   // 파라미터
@@ -16,16 +16,16 @@ export default function Write() {
 
   // 사용자 데이터
   const [groups, setGroups] = useState([]);
-  const [groupId, setGroupId] = useState('');
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
+  const selectRef = useRef();
 
   // 컴포넌트 제어
   const [isUpdate, setIsUpdate] = useState(false);
 
   // ui 제어
   const {openAlert} = uiStore((state) => state.alert);
-  const {isLogin} = userStore(state => state);
+  const {isLogin, userInfo} = userStore(state => state);
 
   // 에디터 제어
   const editorRef = useRef(null);
@@ -36,7 +36,7 @@ export default function Write() {
     }
 
     if (id === null || id === undefined) {
-      getGroupList();
+      void getGroupList();
     } else {
       const getPostInfo= async () => {
         try {
@@ -50,18 +50,18 @@ export default function Write() {
           console.error("게시글 저장 실패 :", error);
         }
       }
-
       getPostInfo().then(() => getGroupList());
     }
   }, []);
 
   const getGroupList = async () => {
     try {
-      const response = await getGroup();
+      const response = await getGroups();
       if (response.status === 200) {
         const groupList = response.data;
-        setGroups((prev) => [...prev, ...groupList]);
-        setGroupId(groupList[0].id);
+        if (groupList.length > 0) {
+          setGroups((prev) => [...prev, ...groupList]);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -76,12 +76,28 @@ export default function Write() {
         return;
       }
 
+      // 게시글 저장 위치
+      const writeSpace = selectRef.current?.selectedOptions[0];
+      const writeSpaceId = writeSpace?.value;
+      const isGroup = writeSpace?.getAttribute('data-isGroup') === 'true';
+
       const requestData = {
-        groupId: groupId,
-        subject: subject,
-        content: editorRef.current.getHTML(),
-        imgList: editorRef.current.getImgList()
+        groupDto: {
+          boolean: isGroup,
+          groupId : isGroup ? writeSpaceId : null
+        },
+        contentDto: {
+          subject: subject,
+          content: editorRef.current.getHTML(),
+          imgUrls: editorRef.current.getImgList()
+        },
+        settingsDto: {
+          isThumbnail: false,
+          thumbnailUrl: null,
+          status: 'NORMAL'
+        }
       }
+
       const respnose = await savePost(requestData);
       if (respnose.status === 201) {
         navigate(respnose.headers.get("Location"));
@@ -119,21 +135,22 @@ export default function Write() {
       <section className='dark:bg-dark'>
         <div className='container'>
           <div className='-mx-4 flex flex-wrap'>
-            <div className='w-full px-4 md:w-1/2 lg:w-1/3'>
+            <div className='w-full px-4'>
               <div className='mb-12'>
                 <label className='mb-[10px] block text-base font-medium text-dark dark:text-white'>
                   글을 작성할 장소를 골라주세요
                 </label>
                 <div className='relative'>
                   <select
-                    onChange={(e) => setGroupId(e.target.value)}
+                    ref={selectRef}
                     className='relative w-full appearance-none rounded-lg border border-stroke dark:border-dark-3 bg-transparent py-2 px-5 text-black dark:text-white outline-none transition'>
+                    <option value={userInfo.id} data-isGroup={false}>
+                      {userInfo.name} (자신의 게시글)
+                    </option>
                     {
                       groups.length > 0 && groups.filter((item) => Object.keys(item).length > 0).length > 0 ? (
                       groups.map((groups, index) => (
-                        <option key={index} value={groups.id}>
-                          {groups.groupStatus === 'USER' && <>사용자</>}
-                          {groups.groupStatus !== 'USER' && <>그룹</>}
+                        <option key={index} value={groups.id} data-isGroup={true}>
                           {groups.name}
                         </option>
                       ))
@@ -152,21 +169,22 @@ export default function Write() {
 
       {/* 제목 입력 */}
       <div className="mb-4">
-        <label htmlFor={"subject"} className="relative">
+        <label htmlFor="subject" className="relative">
           <input
-            id={"subject"}
+            id="subject"
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            maxLength={200}
-            className="peer mt-0.5 w-full rounded border-gray-300 shadow-sm sm:text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+            maxLength={50}
+            className="w-full p-2 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 text-black dark:text-white"
           />
           <span
-            className="absolute inset-y-0 start-3 -translate-y-5 bg-white px-0.5 text-sm font-medium text-gray-700 transition-transform peer-placeholder-shown:translate-y-0 peer-focus:-translate-y-5 dark:bg-gray-900 dark:text-white"
+            className="absolute inset-y-0 start-3 -translate-y-5 bg-white px-0.5 text-sm font-medium text-gray-700 transition-transform peer-placeholder-shown:translate-y-0 peer-focus:-translate-y-5 dark:bg-gray-800 dark:text-white"
           >
             Subject
           </span>
         </label>
+        <p className="text-xs text-gray-500 mt-1">{subject.length}/100</p>
       </div>
 
       {/* 에디터 */}

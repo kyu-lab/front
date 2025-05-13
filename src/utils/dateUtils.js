@@ -20,3 +20,12 @@ export function formatRelativeTime(dateString) {
 
   return target.fromNow();
 }
+
+/**
+ * yyyy-mm-dd HH:mm:ss 으로 포맷한다.
+ * @param dateString  날짜와 시간 문자열
+ * @returns {string}  포맷된 문자열
+ */
+export function formatDate(dateString) {
+  return dayjs(dateString).format('YYYY-MM-DD HH:mm:ss');
+}

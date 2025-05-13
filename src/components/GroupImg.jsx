@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function UserImg({imgUrl}) {
+export default function GroupImg({imgUrl}) {
   const IMAGE_URL = import.meta.env.VITE_BASE_API_URL + "/file";
   return (
     <>
@@ -8,7 +8,7 @@ export default function UserImg({imgUrl}) {
         <img
           src={IMAGE_URL + imgUrl}
           alt="UserImg"
-          className="overflow-hidden flex items-center justify-center"
+          className="rounded-full overflow-hidden flex items-center justify-center"
         />
       }
       {!imgUrl &&
@@ -23,5 +23,6 @@ export default function UserImg({imgUrl}) {
         </svg>
       }
     </>
+
   )
 }
