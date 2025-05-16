@@ -4,17 +4,38 @@ import {Link, useNavigate} from "react-router-dom";
 
 import AuthPage from './users/AuthPage.jsx';
 import SearchPage from './search/SearchPage.jsx';
-import DropDown from "../../components/DropDown.jsx";
-import UsersMenu from "./users/UsersMenu.jsx";
 import userStore from "../../utils/userStore.js";
 import uiStore from "../../utils/uiStore.js";
-import Notices from "./Notification/Notices.jsx";
-import {getPastNotices} from "../../service/noticesService.js";
+import {deleteNotices, getPastNotices} from "@/service/noticesService.js";
 import noticesStore from "../../utils/noticesStore.js";
-import {doSearch} from "../../service/searchService.js";
-import UserImg from "../../components/UserImg.jsx";
-import {closeEventSource, setUpNoticesServer} from "../../utils/evnentSource.js";
-import CreateMenu from "./post/CreateMenu.jsx";
+import {doSearch} from "@/service/searchService.js";
+import {closeEventSource, setUpNoticesServer} from "@/utils/evnentSource.js";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuPortal,
+  DropdownMenuRadioGroup, DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu.jsx";
+import {Button} from "@/components/ui/button.jsx";
+import {
+  Bell,
+  CirclePlus, LogIn, LogOut,
+  Monitor,
+  MonitorCog,
+  Moon,
+  Pen, Settings, Sun,
+  User,
+  Users,
+} from "lucide-react";
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.jsx";
+import {logout} from "@/service/usersService.js";
+import {alertStatus} from "@/utils/enums.js";
+import {useTheme} from "next-themes";
 
 export default function Header() {
   // 화면 설정
@@ -30,18 +51,25 @@ export default function Header() {
 
   // 메뉴 제어
   const [isSearch, setIsSearch] = useState(false);
-  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-  const [isNotiMenuOpen, setIsNotiMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false); // 드롭다운 표시 여부
+
+  // 알림
+  const {notices} = noticesStore(state => state);
   const [notice, setNotice] = useState(false); // 알림 표시 여부
+  const [notifications, setNotifications] = useState([]); // 알림 목록
+  const [isNoticeMenuOpen, setIsNoticeMenuOpen] = useState(false);
+
   const wrapperRef = useRef(null); // 외부 클릭 감지를 위한 ref
+  const {theme, setTheme} = useTheme();
 
   // 사용자 제어
-  const {isLogin, userInfo} = userStore(state => state);
+  const {isLogin, userInfo, reset} = userStore(state => state);
 
   // ui 제어
   const {openDialog} = uiStore(state => state.dialog);
+
+  // ui 제어
+  const {openAlert} = uiStore((state) => state.alert);
 
   // 알림 제어
   const {isNotice, addNotice, clearNotice} = noticesStore(state => state);
@@ -54,25 +82,37 @@ export default function Header() {
     openDialog({body: <AuthPage />, hasPrevious: true});
   }
 
-  // 생성 창 제어
-  const handleToggleCreateMenu = () => {
-    setIsCreateMenuOpen(prev => !prev);
-    setIsUserMenuOpen(false);
-    setIsNotiMenuOpen(false);
-  };
+  // 컴포넌트 진입시 세팅
+  useEffect(() => {
+    setNotifications(notices);
+  }, []);
 
-  // 알림 창 제어
-  const handleToggleNotiMenu = () => {
-    setIsNotiMenuOpen(prev => !prev);
-    setIsUserMenuOpen(false);
-    setIsCreateMenuOpen(false);
-  };
+  const handleNotices = async (notice) => {
+    try {
+      const response = await deleteNotices(notice.id);
+      if (response.status === 200) {
+        if (notice.type === 'P') {
+          navigate(`/post/${notice.postId}`);
+        }
+      }
+    } catch (error) {
+      console.error(`서버 통신 실패 : ${error.statusMessage}`);
+      navigate('/error500');
+    }
+  }
 
-  // 사용자 창 제어
-  const handleToggleUserMenu = () => {
-    setIsUserMenuOpen(prev => !prev);
-    setIsNotiMenuOpen(false);
-    setIsCreateMenuOpen(false);
+  // 로그아웃
+  const handleLogout = async () => {
+    try {
+      const response = await logout();
+      if (response.status === 200) {
+        openAlert({message: "로그아웃 되었습니다.", type: alertStatus.SUCCESS});
+        navigate('/');
+        reset();
+      }
+    } catch (error) {
+      openAlert({message: "잠시 후 다시 로그아웃 시도해주세요.", type: alertStatus.ERROR});
+    }
   };
 
   // header 알림 설정
@@ -171,7 +211,7 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 px-5 py-2 flex-col w-full border-b dark:border-0 shadow">
+    <header className="sticky top-0 z-30 bg-white dark:bg-gray-900 px-5 py-2 flex-col w-full border-b dark:border-0 shadow">
       <nav className="flex flex-wrap justify-between items-center">
         <div className="flex justify-start items-center">
           <Link to={"/"} className="items-center">
@@ -267,80 +307,146 @@ export default function Header() {
             isLogin &&
             <>
               {/* 생성 버튼 */}
-              <div>
-                <button
-                  className="p-2 rounded-full hover:bg-green-300 dark:hover:bg-green-700 cursor-pointer"
-                  onClick={handleToggleCreateMenu}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="w-5 h-5 text-black dark:text-blue-100">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                  </svg>
-                </button>
-
-                {/* 알림메뉴 메뉴 */}
-                {isCreateMenuOpen && <DropDown menuOpen={setIsCreateMenuOpen}><CreateMenu /></DropDown>}
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button aria-label="생성" className="p-2" variant="icon">
+                    <CirclePlus className="h-4 w-4 cursor-pointer" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>생성 메뉴</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup >
+                    <DropdownMenuItem onSelect={() => navigate("/write")}>
+                      <Pen className="h-4 w-4"/>
+                      <span>게시글 생성</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => navigate("/group/create")}>
+                      <Users className="h-4 w-4"/>
+                      <span>그룹 생성</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* 알림 버튼 */}
-              <div>
-                <button
-                  className="relative p-2 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900 cursor-pointer"
-                  onClick={handleToggleNotiMenu}
-                >
-                  {isNotice && <span className="h-2 w-2 rounded-full bg-emerald-500 absolute right-1 ring-1 ring-white"></span>}
-                  <svg
-                    className="w-5 h-5 text-black dark:text-blue-100"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
-                </button>
-
-                {/* 알림메뉴 메뉴 */}
-                {isNotiMenuOpen && <DropDown menuOpen={setIsNotiMenuOpen}><Notices /></DropDown>}
-              </div>
+              <DropdownMenu open={isNoticeMenuOpen} onOpenChange={setIsNoticeMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button aria-label="알림" className="p-2" variant="icon">
+                    <Bell className="h-4 w-4 cursor-pointer" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-72">
+                  <DropdownMenuLabel className="flex justify-between items-center">
+                    <span>알림</span>
+                    <Button
+                      aria-label="설정"
+                      className="p-1"
+                      variant="icon"
+                      onClick={() => {
+                        setIsNoticeMenuOpen(false);
+                        navigate(`/user/settings/notice`);
+                      }}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                      알림이 없습니다.
+                    </div>
+                  ) : (
+                    <DropdownMenuGroup>
+                      {notifications.map((item, idx) => (
+                        <DropdownMenuItem key={idx}>
+                          {/* 알림 내용 */}
+                          {item.message}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuGroup>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/notices" className="text-blue-400 text-sm justify-center">
+                      더 보기
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* 사용자 버튼 */}
               <div>
-                <button
-                  className="p-1 rounded-full hover:bg-indigo-300 dark:hover:bg-indigo-700 cursor-pointer"
-                  onClick={handleToggleUserMenu}
-                >
-                  <div className="w-7 h-7">
-                    <UserImg imgUrl={userInfo.imgUrl} />
-                  </div>
-                </button>
-
-                {/* 사용자 드롭다운 메뉴 */}
-                {isUserMenuOpen && <DropDown menuOpen={setIsUserMenuOpen}><UsersMenu /></DropDown>}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button className="p-2" variant="icon">
+                      <Avatar className="h-4 w-4 cursor-pointer">
+                        <AvatarImage src={userInfo.imgUrl} alt="user" />
+                        <AvatarFallback>
+                          <User />
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    <DropdownMenuLabel className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={userInfo.imgUrl} alt="user" />
+                        <AvatarFallback>
+                          <User className="h-4 w-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{userInfo.name}</span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem onSelect={() => navigate(`/user/${userInfo.id}/info`)}>
+                        <User />프로필
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => navigate(`/user/settings/account`)}>
+                        <Settings />설정
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          <Monitor /> 디스플레이 설정
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value)}>
+                              <DropdownMenuRadioItem value="system">
+                                <MonitorCog className="mr-2 h-4 w-4" /> 기본값
+                              </DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="light">
+                                <Sun className="mr-2 h-4 w-4" /> 밝음
+                              </DropdownMenuRadioItem>
+                              <DropdownMenuRadioItem value="dark">
+                                <Moon className="mr-2 h-4 w-4" /> 어두움
+                              </DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuSub>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={handleLogout}>
+                      <LogOut />로그아웃
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </>
           }
 
           {/* 로그인 버튼 */}
-          {
-            !isLogin  &&
-            <button
-              className="border-3 rounded-full px-3 py-2 text-white bg-blue-500 dark:bg-blue-700 hover:bg-blue-600"
+          {!isLogin  &&
+            <Button
+              className="rounded-full px-3 text-white bg-blue-500 dark:bg-blue-950 hover:bg-blue-600"
               onClick={handleOpenDialog} >
-              LogIn
-            </button>
-          }
+              <LogIn/> LogIn
+            </Button>}
         </div>
       </nav>
 

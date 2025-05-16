@@ -1,0 +1,6 @@
+/* 에디터 내용 스타일링 */
+.tiptap {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}

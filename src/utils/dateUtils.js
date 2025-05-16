@@ -14,8 +14,8 @@ export function formatRelativeTime(dateString) {
   const target = dayjs(dateString);
   const diffInSeconds = now.diff(target, 'second');
 
-  if (diffInSeconds < 30) {
-    return '방금 전';
+  if (diffInSeconds <= 59) {
+    return 'just a moment ago';
   }
 
   return target.fromNow();
