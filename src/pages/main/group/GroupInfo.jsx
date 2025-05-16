@@ -2,9 +2,8 @@ import React, {useEffect, useState} from "react";
 import uiStore from "../../../utils/uiStore.js";
 import userStore from "../../../utils/userStore.js";
 import {useNavigate, useParams} from "react-router-dom";
-import {getUserInfo} from "../../../service/usersService.js";
 import UserImg from "../../../components/UserImg.jsx";
-import {getGroup} from "../../../service/groupService.js";
+import {getGroup} from "@/service/groupService.js";
 
 export default function GruopInfo() {
   // 파라미터
@@ -39,7 +38,6 @@ export default function GruopInfo() {
     const loadGroupInfo = async () => {
       try {
         const response = await getGroup(id);
-        debugger;
         if (response.status === 200) {
           const data = response.data;
 

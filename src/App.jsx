@@ -21,6 +21,7 @@ import NoticesView from "./pages/header/Notification/NoticesView.jsx";
 import CreateGroup from "./pages/main/group/CreateGroup.jsx";
 import GruopInfo from "./pages/main/group/GroupInfo.jsx";
 import PostView from "./pages/main/post/PostView.jsx";
+import {ThemeProvider} from "next-themes";
 
 export default function App() {
   const isDesktop = useMediaQuery({minWidth: 768});
@@ -31,20 +32,7 @@ export default function App() {
   useEffect(() => {
     openLoading({isFullScreen: true});
     const initializeApp = async () => {
-      // 1. 테마 설정
-      const theme = localStorage.getItem('theme');
-      if (theme === null) {
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-        localStorage.setItem('theme', 'default');
-      } else {
-        document.documentElement.classList.add(theme);
-      }
-
-      // 2. 사용자 데이터 설정 (로그인 유저라면)
+      // 1. 사용자 데이터 설정 (로그인 유저라면)
       if (localStorage.getItem("token")) {
         try {
           await setUp(); // 비동기 작업 완료 대기
@@ -56,7 +44,7 @@ export default function App() {
         reset();
       }
 
-      // 3. 최근 게시글 설정
+      // 2. 최근 게시글 설정
       if (!sessionStorage.getItem('recentPosts')) {
         sessionStorage.setItem('recentPosts', JSON.stringify([]));
       }
@@ -72,13 +60,11 @@ export default function App() {
   // 메인 화면 디자인
   const Layout = () => {
     return (
-      <div className="flex flex-grow bg-gray-100 dark:bg-gray-900 h-full">
+      <div className="flex flex-grow bg-gray-100 dark:bg-black h-full">
         <RightSidebar />
         <div className="flex flex-grow justify-center">
-          <main className="w-full max-w-2xl md:max-w-3xl lg:max-w-4xlxl">
-            <div>
-              <Outlet />
-            </div>
+          <main className="w-full">
+            <div><Outlet /></div>
           </main>
           <RightSidebar />
         </div>
@@ -88,8 +74,13 @@ export default function App() {
 
   return (
     <>
-      <div className="relative min-h-screen dark:bg-gray-900">
-        <Header />
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+      >
+        <div className="relative min-h-screen flex flex-col">
+          <Header />
           <Routes>
             {/* 메인 화면 라우팅 */}
             <Route element={<Layout />}>
@@ -106,15 +97,15 @@ export default function App() {
             <Route path='/user/settings/:page' element={<UsersSettings />} />
             <Route path='/user/:id/info' element={<UsersInfo />} />
 
-
             {/* 에러페이지 */}
             <Route path='/error404' element={<Error404 />} />
             <Route path='/error500' element={<Error500 />} />
           </Routes>
-        <footer className="text-xs text-gray-500 p-4 text-center">
-          This is footer<br /> WriteHere © 2025. All rights reserved.
-        </footer>
-      </div>
+          <footer className="text-xs text-gray-500 p-4 text-center">
+            This is footer<br /> WriteHere © 2025. All rights reserved.
+          </footer>
+        </div>
+      </ThemeProvider>
 
       {/* 컴포넌트 */}
       <Alert />

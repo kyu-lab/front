@@ -1,26 +1,27 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {useNavigate} from "react-router-dom";
-import {getComments} from "../../../service/commentService.js";
-import uiStore from "../../../utils/uiStore.js";
-import Loading from "../../../components/Loading.jsx";
+import {getComments} from "@/service/commentService.js";
 import Comment from "./Comment.jsx";
 import CommentEditor from "../../../components/CommentEditor.jsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu.jsx";
+import {Button} from "@/components/ui/button.jsx";
+import {ArrowUpDown, RotateCcw} from "lucide-react";
+import userStore from "@/utils/userStore.js";
+import {Skeleton} from "@/components/ui/skeleton.jsx";
 
-export default function CommentList({postId}) {
+export default function CommentList({postId, writerId}) {
   // 페이지이동
   const navigate = useNavigate();
   
   // 조회 데이터
-  const [order, setOrder] = useState("N");
+  const [order, setOrder] = useState({id: "N", label:"최신순"});
   const [comments, setComments] = useState([]);
-
-  // 메뉴 제어
-  const [isShowCommentMenu, setIsShowCommentMenu] = useState(false);
-
-  // ui 제어
-  const menuRef = useRef(null);
-  const {isLoading, openLoading, closeLoading} = uiStore(state => state.loading);
-  const {openPrompt} = uiStore((state) => state.prompt);
 
   // 스크롤 상태 제어
   const nextCursorRef = useRef(null); // 다음 커서 관리
@@ -28,11 +29,13 @@ export default function CommentList({postId}) {
   const observerRef = useRef(null);
   const loading = useRef(false);
 
+  // 사용자 제어
+  const {isLogin} = userStore(state => state);
+
   // 탭 데이터 배열
-  const tabs = [
+  const orders = [
     {id: "N", label: "최신순"},
     {id: "O", label: "오래된순"},
-    // 필요하면 더 추가 가능
   ];
 
   useEffect(() => {
@@ -43,7 +46,8 @@ export default function CommentList({postId}) {
 
   const handleGetComments = async () => {
     try {
-      const response = await getComments(postId, nextCursorRef.current, order);
+      loading.current = true;
+      const response = await getComments(postId, nextCursorRef.current, order.id);
       if (response.commentItems.length > 0) {
         setComments((prev) => {
           // 1. 댓글 목록을 합친다.
@@ -96,59 +100,69 @@ export default function CommentList({postId}) {
     };
   }, []);
 
+  const changeOrder = (newOrderId) => {
+    const selectedOrder = orders.find(tab => tab.id === newOrderId);
+    if (selectedOrder) {
+      setOrder(selectedOrder);
+    }
+  }
+
+  const refreshList = async () => {
+    hasMoreRef.current = true;
+    nextCursorRef.current = null;
+    setComments([]);
+    void handleGetComments();
+  }
+
   return (
-    <>
-    {/* Comments section */}
-    <div className="p-4">
-      <div>
-        <CommentEditor postId={postId} parentId={null} />
-
-        <button
-          className="flex items-center mb-3 text-sm text-gray-500"
-          onClick={() => setIsShowCommentMenu(!isShowCommentMenu)}
-        >
-          <span className="text-black dark:text-white">전체 댓글 [개수]</span>
-          <span className="ml-1">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M480-360 280-560h400L480-360Z"/></svg>
-          </span>
-        </button>
-
-        {isShowCommentMenu && (
-          <div
-            ref={menuRef}
-            className="absolute mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-20"
-          >
-            <button className="block w-full text-left px-4 py-2 text-sm text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
-              <span>최신순</span>
-            </button>
-            <button className="block w-full text-left px-4 py-2 text-sm text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
-              <span>오래된순</span>
-            </button>
-          </div>
-        )
-        }
-
-        {/* comment */}
-        <>
-        {comments.length > 0 ? (
-          comments.map((comment, index) =>  (
-            <div key={index} className="mx-auto mt-2 p-4 text-sm bg-white dark:bg-gray-900 rounded-xl">
-              <Comment postId={postId} comment={comment} />
-            </div>
-          ))
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-500 text-center px-4">
-              댓글이 없습니다.
-            </div>
-          )
-        }
-        </>
-        <div ref={observerRef} className="justify-center text-gray-500 text-center mt-5">
-          {(comments.length > 0 && hasMoreRef) && <p>마지막 댓글입니다.</p>}
-          {isLoading && <Loading />}
-        </div>
+    <div>
+      {isLogin && <CommentEditor refreshList={refreshList} postId={postId} parentId={null} />}
+      <div className='flex py-2'>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="icon">
+              <ArrowUpDown /> {order.label}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel>댓글 목록 정렬</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup value={order.id} onValueChange={changeOrder}>
+              {orders.map((tab, index) => (
+                <DropdownMenuRadioItem key={index} value={tab.id}>
+                  {tab.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button variant='icon' onClick={refreshList}>
+          <RotateCcw />새로고침
+        </Button>
       </div>
+
+      {/* comment */}
+      {comments.length > 0 && (
+        comments.map((comment, index) =>  (
+          <div key={index} className="mx-auto mt-2 text-sm">
+            <Comment postId={postId} writerId={writerId} comment={comment} refreshList={refreshList} />
+          </div>
+        ))
+      )}
+
+      {(loading.current && comments.length > 0) &&
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </div>
+        </div>}
+
+      {(!loading.current && comments.length === 0) &&
+        <div className="flex items-center justify-center h-full text-gray-500 text-center px-4">
+          첫 댓글을 작성해보세요.
+        </div>}
     </div>
-    </>
   )
 }

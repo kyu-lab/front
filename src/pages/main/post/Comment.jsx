@@ -8,9 +8,30 @@ import UserImg from "../../../components/UserImg.jsx";
 import {formatRelativeTime} from "../../../utils/dateUtils.js";
 import Loading from "../../../components/Loading.jsx";
 import CommentEditor from "../../../components/CommentEditor.jsx";
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.jsx";
+import {
+  BookMarked,
+  CirclePlus,
+  Eraser,
+  EyeOff,
+  Flag,
+  MoreHorizontal,
+  Pen,
+  Reply,
+  Share,
+  ThumbsUp,
+  User
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuRadioGroup, DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu.jsx";
+import {Button} from "@/components/ui/button.jsx";
 
-export default function Comment ({postId, comment, isChild = false}) {
-  const {isLogin} = userStore(state => state);
+export default function Comment ({postId, writerId, refreshList, comment, isChild = false}) {
+  const {isLogin, userInfo} = userStore(state => state);
   const [editorOpen, setEditorOpen] = useState(false);
 
   // 자식 댓글 갯수
@@ -61,101 +82,117 @@ export default function Comment ({postId, comment, isChild = false}) {
   }
 
   return (
-    <div className={`flex ${isChild ? 'py-2' : ''}`}>
-      <div className="relative flex flex-col items-center mr-2 w-7">
+    <div className={`flex ${isChild ? 'py-2' : 'space-y-3'}`}>
+      <div className="flex items-start mr-2">
         {/* 프로필 아이콘 */}
-        <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200">
-          <UserImg imgUrl={comment.writerInfo.imgUrl} />
-        </div>
-
-        {childCount > 0 &&
-          <div className="flex-1 w-px bg-gray-300 dark:bg-gray-700" />
-        }
-        {isChild &&
-          <div
-            className="absolute top-4 left-0 w-6 h-px bg-gray-300 dark:bg-gray-700"
-            style={{ transform: 'translateX(-100%)' }}
-          />
-        }
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={comment.writerInfo.imgUrl} alt="user" />
+          <AvatarFallback>
+            <User />
+          </AvatarFallback>
+        </Avatar>
       </div>
 
       {/* ── 댓글 본문 ── */}
       <div className="flex-1">
-        <div className="text-sm font-semibold text-gray-800 dark:text-white">
-          {comment.writerInfo.name}
-          <span className="text-xs text-gray-500 ml-2">
-            {formatRelativeTime(comment.commentInfoDto.createdAt)}
-          </span>
-        </div>
-
-        <div className="text-sm py-1.5 text-gray-900 dark:text-gray-200 whitespace-pre-line">
-          {comment.commentInfoDto.content}
-        </div>
-
-        {isLogin && (
-          <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400">
-            <button className="hover:underline">like</button>
-            <button onClick={() => setEditorOpen(isOpen => !isOpen)} className="hover:underline">
-              Reply
-            </button>
+        <div className="rounded-2xl bg-gray-100 dark:bg-gray-900">
+          <div className="flex justify-between items-center mb-2 px-5">
+            <div className="flex items-center space-x-2">
+              <span className="font-bold">{comment.writerInfo.name}</span>
+              {
+                writerId === comment.writerInfo.id &&
+                <span className="bg-blue-100 text-blue-800 text-xs px-1 py-0.5 rounded-full">작성자</span>
+              }
+              <span className="text-xs text-gray-500">{formatRelativeTime(comment.commentInfoDto.createdAt)}</span>
+            </div>
+            <div className="relative">
+              <div className="p-1">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      aria-label="더보기"
+                      className="p-2 hover:bg-gray-200 hover:dark:bg-gray-600 rounded-full transition-colors duration-200"
+                      variant="icon">
+                      <MoreHorizontal size={20} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuLabel>
+                      해당 댓글을..
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup >
+                      {writerId === userInfo.id && (
+                        <>
+                          <DropdownMenuItem>
+                            <Pen className="h-4 w-4"/>
+                            <span>수정하기</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Eraser className="h-4 w-4"/>
+                            <span>삭제하기</span>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      <DropdownMenuItem>
+                        <Flag /> 신고
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <EyeOff /> 숨기기
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <BookMarked /> 저장
+                      </DropdownMenuItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           </div>
-        )}
+          <div className="text-gray-800 px-5 dark:text-gray-200">
+            {comment.commentInfoDto.content}
+          </div>
+          <div className="flex items-center mt-2 px-1">
+            <Button
+              variant="icon"
+              className="flex items-center space-x-1 transition-colors duration-200 cursor-pointer">
+              <ThumbsUp />
+              <span>99999</span>
+            </Button>
+            <Button
+              onClick={() => setEditorOpen(isOpen => !isOpen)}
+              variant="icon"
+              className="hover:text-primary-600 transition-colors duration-200 cursor-pointer">
+              <Reply /> 답장
+            </Button>
+          </div>
+        </div>
 
         {/* 리플 에디터 */}
         {editorOpen && (
           <div className="mt-2">
-            <CommentEditor postId={postId} parentId={comment.commentInfoDto.id} />
+            <CommentEditor refreshList={refreshList} postId={postId} parentId={comment.commentInfoDto.id} />
           </div>
         )}
 
         {/* 대댓글 “댓글 더보기” 버튼 표시 */}
         {childCount > 0 && (
-          <div className="mt-2">
+          <>
             {childComment.map((child, index) => (
-              <Comment key={index} postId={postId} comment={child} isChild={true} />
+              <Comment refreshList={refreshList} key={index} postId={postId} comment={child} isChild={true} />
             ))}
-
-            {/* 대댓글 버튼 표시 */}
-            {/*{isChild && childCount - 1 > 0 &&*/}
-            {/*<>*/}
-            {/*  <button className="text-xs text-blue-500 hover:underline mt-2">*/}
-            {/*    {childCount - 1}개 댓글 더보기*/}
-            {/*  </button>*/}
-            {/*  <div*/}
-            {/*    className="absolute top-4 left-0 w-6 h-px bg-gray-300 dark:bg-gray-700"*/}
-            {/*    style={{ transform: 'translateX(-100%)' }}*/}
-            {/*  />*/}
-            {/*</>*/}
-            {/*}*/}
-          </div>
+          </>
         )}
 
         {/* 최상위 댓글 “댓글 더보기” 버튼 표시 */}
         {(exsitsReply.current) && (
-          <button
-            onClick={handleGetMoreComments}
-            className="relative flex items-center mr-2"
-          >
-            <div
-              className="absolute top-4 left-0 w-6 h-px bg-gray-300 dark:bg-gray-700"
-              style={{transform: 'translateX(-100%)'}}
-            />
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="w-6 h-6 text-black dark:text-white">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-            </svg>
+          <Button variant={'icon'} onClick={handleGetMoreComments}>
+            <CirclePlus size={15} />
             <span className="px-1">{childCount - 2}개 댓글 더보기</span>
-          </button>
+          </Button>
         )}
       </div>
     </div>
   );
 };
+

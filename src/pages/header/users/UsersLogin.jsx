@@ -1,10 +1,10 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 
-import {login} from "../../../service/usersService.js";
+import {login} from "@/service/usersService.js";
 import uiStore from "../../../utils/uiStore.js";
 import userStore from "../../../utils/userStore.js";
-import {alertStatus} from "../../../utils/enums.js";
+import {alertStatus} from "@/utils/enums.js";
 
 export default function UsersLogin({setPage}) {
   // 페이지 제어
@@ -53,9 +53,8 @@ export default function UsersLogin({setPage}) {
   return (
     <div className="space-y-4">
       <div className="text-2xl text-center text-black dark:text-white my-4">LogIn</div>
-      <p className="text-gray-400 text-sm mb-6">
-        By continuing, you agree to our <a href="#" className="text-blue-500">User Agreement</a> and
-        acknowledge that you understand the <a href="#" className="text-blue-500">Privacy Policy</a>.
+      <p className="text-gray-400 text-sm mb-6 text-center">
+        자유롭게 글을 작성해보세요.
       </p>
       {/* 입력 필드 */}
       <div>

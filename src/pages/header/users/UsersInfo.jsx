@@ -1,11 +1,25 @@
 import React, {useEffect, useState} from 'react';
 import userStore from "../../../utils/userStore.js";
 import {useNavigate, useParams} from "react-router-dom";
-import {uploadUserImg} from "../../../service/fileService.js";
-import {alertStatus} from "../../../utils/enums.js";
+import {uploadUserImg} from "@/service/fileService.js";
+import {alertStatus} from "@/utils/enums.js";
 import uiStore from "../../../utils/uiStore.js";
-import {getUserInfo} from "../../../service/usersService.js";
-import UserImg from "../../../components/UserImg.jsx";
+import {getUserInfo} from "@/service/usersService.js";
+import {Card, CardContent} from "@/components/ui/card.jsx";
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.jsx";
+import {Camera, Clock, Eye, MessageSquare, ThumbsUp, Upload, User} from "lucide-react";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs.jsx";
+import {ScrollArea} from "@/components/ui/scroll-area.jsx";
+import {Skeleton} from "@/components/ui/skeleton.jsx";
+import {Input} from "@/components/ui/input.jsx";
+import {Button} from "@/components/ui/button.jsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu.jsx";
 
 export default function UsersInfo() {
   // 파라미터
@@ -24,6 +38,7 @@ export default function UsersInfo() {
   const [userId, setUserId] = useState(null);
   const [name, setName] = useState(null);
   const [userImg, setUserImg] = useState(null);
+  const [backgroundImage, setbackgroundImage] = useState(null);
 
   // ui 제어
   const {openAlert} = uiStore((state) => state.alert);
@@ -84,7 +99,7 @@ export default function UsersInfo() {
 
       }
     }
-    loadUserInfo();
+    void loadUserInfo();
   }, []);
 
   const handleUploadUserCoverImg = async () => {
@@ -111,89 +126,272 @@ export default function UsersInfo() {
     }
   }
 
+  const handleUploadBackgroundImg = async (e) => {
+    try {
+      const file = e.target.files[0];
+      if (file && isLogin) {
+        const userimgUrl = await uploadUserImg(file, userInfo.id);
+        setUserImg(userimgUrl);
+        openAlert({message: "사진이 등록되었습니다.", type: alertStatus.SUCCESS});
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      e.target.value = "";
+    }
+  }
+
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // In a real app, you would fetch the user's activity from an API
+    // For this example, we'll use mock data
+    const mockActivities = [
+      {
+        id: 1,
+        type: "like",
+        content: "게시물에 좋아요를 눌렀습니다",
+        date: "2023-05-15T10:30:00",
+        target: "여행 사진 모음",
+      },
+      {
+        id: 2,
+        type: "comment",
+        content: "댓글을 작성했습니다: '정말 멋진 사진이네요!'",
+        date: "2023-05-14T15:45:00",
+        target: "제주도 여행기",
+      },
+      {
+        id: 3,
+        type: "view",
+        content: "게시물을 조회했습니다",
+        date: "2023-05-14T09:20:00",
+        target: "맛집 추천",
+      },
+      {
+        id: 4,
+        type: "like",
+        content: "게시물에 좋아요를 눌렀습니다",
+        date: "2023-05-13T18:10:00",
+        target: "일상 스케치",
+      },
+      {
+        id: 5,
+        type: "comment",
+        content: "댓글을 작성했습니다: '좋은 정보 감사합니다'",
+        date: "2023-05-12T11:05:00",
+        target: "여행 팁",
+      },
+      {
+        id: 6,
+        type: "view",
+        content: "게시물을 조회했습니다",
+        date: "2023-05-11T14:30:00",
+        target: "사진 촬영 팁",
+      },
+      {
+        id: 7,
+        type: "like",
+        content: "게시물에 좋아요를 눌렀습니다",
+        date: "2023-05-10T20:15:00",
+        target: "일상 공유",
+      },
+    ]
+
+    // Simulate API delay
+    setTimeout(() => {
+      setActivities(mockActivities)
+      setLoading(false)
+    }, 1000)
+  }, [userId])
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case "like":
+        return <ThumbsUp className="h-4 w-4 text-rose-500" />
+      case "comment":
+        return <MessageSquare className="h-4 w-4 text-blue-500" />
+      case "view":
+        return <Eye className="h-4 w-4 text-green-500" />
+      default:
+        return <Clock className="h-4 w-4" />
+    }
+  }
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString)
+    return new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date)
+  }
+
+  const filterActivities = (type) => {
+    if (type === "all") return activities
+    return activities.filter((activity) => activity.type === type)
+  }
+
   return (
-    <div className="bg-white min-h-screen">
+    <div className="flex flex-col gap-6 bg-gray-100 dark:bg-gray-900">
       <div className="min-h-screen bg-gray-100">
-        {/* 커버 사진 및 프로필 사진 */}
-        <div className="relative">
-          <div className="h-64 bg-gray-300">
-            {/* 커버 사진 */}
-            <div className="w-full h-full flex items-center justify-end p-4">
-              <button
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md flex items-center"
-                onClick={handleUploadUserCoverImg}
-              >
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
-                </svg>
-                커버 사진 추가
-              </button>
+        <Card className="absolute w-full overflow-hidden">
+          <div
+            className="h-40 w-full"
+            style={{
+              backgroundImage: backgroundImage ? `url(${backgroundImage})` : "linear-gradient(to right, #4f46e5, #3b82f6)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
+            <div className="bottom-2 right-2 rounded-full">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="" className='rounded-full'>
+                    <Camera className="h-4 w-4 mr-2" /> 배경이미지
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuRadioGroup>
+                    <DropdownMenuRadioItem>
+                      배경 업로드
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem>
+                      배경 삭제
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
-          <div className="absolute bottom-0 left-8 transform translate-y-1/2">
-            <div className="w-40 h-40 bg-gray-400 rounded-full border-4 border-white flex items-center justify-center">
-              {
-                userImg ? (<UserImg imgUrl={userInfo.imgUrl} />) : (
-                  <svg className="w-20 h-20 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
-                )
-              }
+          
+          {/* 사용자 이미지와 소개 */}
+          <CardContent className="relative px-40">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-10 mb-4">
+              <div className="relative">
+                <Avatar className="h-24 w-24 border-4 border-background">
+                  <AvatarImage src={name || undefined} alt={<User />} />
+                  <AvatarFallback><User /></AvatarFallback>
+                </Avatar>
+
+                {/* Profile image button */}
+                <div className="absolute -bottom-0 right-1 h-8 w-8">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="icon" className='rounded-full bg-gray-200'>
+                        <Upload className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuRadioGroup>
+                        <DropdownMenuRadioItem>
+                          이미지 업로드
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem>
+                          이미지 삭제
+                        </DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+              <div className="text-center sm:text-left">
+                <h2 className="text-2xl font-bold">{name}</h2>
+                <p className="text-muted-foreground">내 소개~~</p>
+              </div>
             </div>
-            <label
-              htmlFor="userImg"
-              className="absolute bottom-2 right-2 bg-gray-200 rounded-full p-2 cursor-pointer">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="size-6 z-20">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"/>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"/>
-              </svg>
-              <input
-                id="userImg"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleUploadUserImg}
-              />
-            </label>
-          </div>
-        </div>
 
-        {/* 사용자 이름 및 버튼 */}
-        <div className="mt-20 px-8">
-          <p className="text-3xl font-bold">{name}<span className="text-xl font-bold">#{userId}</span></p>
-        </div>
+            <div className="flex gap-4 mt-4 ml-20">
+              <div className="text-center">
+                <span className="font-bold">0</span> <span className="text-sm text-muted-foreground">게시물</span>
+              </div>
+              <div className="text-center">
+                <span className="font-bold">0</span> <span className="text-sm text-muted-foreground">팔로워</span>
+              </div>
+              <div className="text-center">
+                <span className="font-bold">0</span> <span className="text-sm text-muted-foreground">팔로잉</span>
+              </div>
+              <div className="text-center">
+                <span className="font-bold">0</span> <span className="text-sm text-muted-foreground">좋아요</span>
+              </div>
+            </div>
+          </CardContent>
 
-        {/* 탭 */}
-        <div className="mt-6 border-t border-gray-200">
-          <div className="flex space-x-6 px-8 py-4">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                className={`text-gray-600 hover:text-blue-600 ${
-                  tab === tab.id
-                    ? "font-semibold border-b-2 border-blue-60"
-                    : ""
-                }`}
-                onClick={() => setTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
+          {/* 사용자 이미지 */}
+          <Input
+            id="userImg"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleUploadUserImg}
+          />
 
-        {/* 콘텐츠 영역 */}
-        <div className="px-8 py-4">
-          <div className="flex flex-col items-center justify-center p-16 gap-4">
-            <p className="text-xl text-gray-400">활동 내역이 없어요</p>
-          </div>
-        </div>
+          {/* 백그라운드 */}
+          <Input
+            id="backgroundImg"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleUploadBackgroundImg}
+          />
+
+          {/* 본문 */}
+          <CardContent className="relative px-40">
+            <Tabs defaultValue="all">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="all">전체</TabsTrigger>
+                <TabsTrigger value="like">좋아요</TabsTrigger>
+                <TabsTrigger value="comment">댓글</TabsTrigger>
+                <TabsTrigger value="view">조회</TabsTrigger>
+              </TabsList>
+
+              {["all", "like", "comment", "view"].map((tab) => (
+                <TabsContent key={tab} value={tab}>
+                  <ScrollArea className="h-[300px] pr-4">
+                    {loading ? (
+                      <div className="space-y-4">
+                        {Array(5)
+                          .fill(0)
+                          .map((_, i) => (
+                            <div key={i} className="flex items-start gap-4 py-4">
+                              <Skeleton className="h-10 w-10 rounded-full" />
+                              <div className="space-y-2">
+                                <Skeleton className="h-4 w-[250px]" />
+                                <Skeleton className="h-4 w-[200px]" />
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-4 pt-2">
+                        {filterActivities(tab).length > 0 ? (
+                          filterActivities(tab).map((activity) => (
+                            <div key={activity.id} className="flex items-start gap-4 py-4 border-b last:border-0">
+                              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                {getActivityIcon(activity.type)}
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium">{activity.content}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {activity.target} • {formatDate(activity.date)}
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-8 text-center text-muted-foreground">활동 내역이 없습니다</div>
+                        )}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

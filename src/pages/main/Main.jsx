@@ -10,10 +10,22 @@ import {promptStatus} from "../../utils/enums.js";
 import {followUser} from "../../service/FollowService.js";
 import PostInfo from "./post/PostInfo.jsx";
 
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {ArrowUpDown, ListOrdered} from "lucide-react";
+
 export default function Main() {
   // 목록 제어
-  const [order, setOrder] = useState(localStorage.getItem("order") || "N");
-
+  const savedOrder = localStorage.getItem("post-order");
+  const [order, setOrder] = useState(savedOrder ? JSON.parse(savedOrder) : {id: "N", label:"최신순"});
   const [postItems, setPostItems] = useState([]);
 
   // 스크롤 상태 제어
@@ -26,15 +38,21 @@ export default function Main() {
   const {isLoading, openLoading, closeLoading} = uiStore(state => state.loading);
 
   // 탭 데이터 배열
-  const tabs = [
+  const orders = [
     {id: "N", label: "최신순"},
     {id: "V", label: "조회순"},
-    // 필요하면 더 추가 가능
   ];
 
-  // 탭 변경시 게시글 목록을 다시 호출함
+  const changeOrder = (newOrderId) => {
+    const selectedOrder = orders.find(tab => tab.id === newOrderId);
+    if (selectedOrder) {
+      setOrder(selectedOrder);
+      localStorage.setItem("post-order", JSON.stringify(selectedOrder));
+    }
+  }
+
   useEffect(() => {
-    localStorage.setItem("post-order", order);
+    localStorage.setItem("post-order", JSON.stringify(order));
     setPostItems([]);
     hasMoreRef.current = true;
     nextCursorRef.current = null;
@@ -74,7 +92,7 @@ export default function Main() {
     }
     try {
       loading.current = true;
-      const response = await getPosts(nextCursorRef.current, order);
+      const response = await getPosts(nextCursorRef.current, order.id);
       if (response.postItems.length > 0) {
         setPostItems((prev) => [...prev, ...response.postItems]);
       }
@@ -91,22 +109,25 @@ export default function Main() {
   return (
     <>
       {/* 정렬 헤더 */}
-      <div className="border-b border-gray-700 flex items-center">
-        <div className="flex">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={`px-4 py-3 text-sm font-medium dark:text-white ${
-                order === tab.id
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-gray-600"
-              }`}
-              onClick={() => setOrder(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div className="mt-3 items-center flex justify-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="rounded-2xl">
+              <ArrowUpDown /> {order.label}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuLabel className='text-center'>게시글 정렬</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup value={order.id} onValueChange={changeOrder}>
+              {orders.map((tab, index) => (
+                <DropdownMenuRadioItem key={index} value={tab.id}>
+                  {tab.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* 게시물 렌더링 */}
@@ -117,12 +138,10 @@ export default function Main() {
             key={index}
             className="py-3 px-10"
           >
-            <Link to={`/post/${e.postListItemDto.id}`}>
-              <PostInfo
-                postListItemDto={e.postListItemDto}
-                writerInfo={e.writerInfo}
-              />
-            </Link>
+            <PostInfo
+              postListItemDto={e.postListItemDto}
+              writerInfo={e.writerInfo}
+            />
           </div>
         ))) : (
           <div className="flex items-center justify-center h-full min-h-[calc(100vh-100px)] text-gray-500 text-center px-4">
@@ -133,7 +152,6 @@ export default function Main() {
       }
 
       <div ref={observerRef} className="justify-center text-gray-500 text-center p-5">
-        {(postItems.length > 0 && hasMoreRef) && <p>마지막 게시글입니다.</p>}
         {isLoading && <Loading />}
       </div>
     </>

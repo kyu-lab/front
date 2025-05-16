@@ -1,11 +1,31 @@
 import React, {useEffect, useRef, useState} from "react";
-import Editor from "../../../components/Editor.jsx";
-import {getPost, savePost, updatePost} from "../../../service/postService.js";
+import Editor from "../../../components/PostEditor.jsx";
+import {getPost, savePost, updatePost} from "@/service/postService.js";
 import {useNavigate, useParams} from "react-router-dom";
 import uiStore from "../../../utils/uiStore.js";
 import userStore from "../../../utils/userStore.js";
-import {alertStatus} from "../../../utils/enums.js";
-import {getGroups} from "../../../service/groupService.js";
+import {alertStatus} from "@/utils/enums.js";
+import {getGroups} from "@/service/groupService.js";
+
+import { Check, ChevronsUpDown } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {Input} from "@/components/ui/input";
+import {Label} from "@radix-ui/react-dropdown-menu";
 
 export default function Write() {
   // 파라미터
@@ -16,9 +36,9 @@ export default function Write() {
 
   // 사용자 데이터
   const [groups, setGroups] = useState([]);
+  const [selectGroup, setSelectGroup] = useState({});
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
-  const selectRef = useRef();
 
   // 컴포넌트 제어
   const [isUpdate, setIsUpdate] = useState(false);
@@ -30,15 +50,27 @@ export default function Write() {
   // 에디터 제어
   const editorRef = useRef(null);
 
+  // 셀렉트박스 제어
+  const [open, setOpen] = React.useState(false);
+
   useEffect(() => {
     if (!isLogin) {
       navigate("/");
     }
 
+    // 기본값 세팅
+    const userId = userInfo.id;
+    const label = userInfo.name + ' (사용자)';
+    setGroups([{
+      value: userId,
+      label: label,
+      isGroup: false
+    }]);
+
     if (id === null || id === undefined) {
       void getGroupList();
     } else {
-      const getPostInfo= async () => {
+      const getPostInfo = async () => {
         try {
           const response = await getPost(id);
           const postInfo = response.postDetail;
@@ -76,19 +108,14 @@ export default function Write() {
         return;
       }
 
-      // 게시글 저장 위치
-      const writeSpace = selectRef.current?.selectedOptions[0];
-      const writeSpaceId = writeSpace?.value;
-      const isGroup = writeSpace?.getAttribute('data-isGroup') === 'true';
-
       const requestData = {
         groupDto: {
-          boolean: isGroup,
-          groupId : isGroup ? writeSpaceId : null
+          boolean: selectGroup.isGroup,
+          groupId : selectGroup.value
         },
         contentDto: {
           subject: subject,
-          content: editorRef.current.getHTML(),
+          content: sanitizeHtml(removeScriptTags(editorRef.current.getHTML())),
           imgUrls: editorRef.current.getImgList()
         },
         settingsDto: {
@@ -109,13 +136,51 @@ export default function Write() {
     }
   }
 
+  function removeScriptTags(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+
+    // script 태그 제거
+    const scripts = div.querySelectorAll('script');
+    scripts.forEach(script => script.remove());
+
+    return div.innerHTML;
+  }
+
+  function sanitizeHtml(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+
+    // script 태그 제거
+    div.querySelectorAll('script').forEach(el => el.remove());
+
+    // 위험 속성 제거
+    const dangerousAttrs = ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'oninput'];
+    div.querySelectorAll('*').forEach(el => {
+      dangerousAttrs.forEach(attr => {
+        if (el.hasAttribute(attr)) {
+          el.removeAttribute(attr);
+        }
+      });
+
+      // javascript: 제거
+      [...el.attributes].forEach(attr => {
+        if (attr.value.toLowerCase().startsWith('javascript:')) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    });
+
+    return div.innerHTML;
+  }
+
   const handleUpdatePost = async () => {
     try {
       const requestData = {
         postId: id,
         groupId: groupId,
         subject: subject,
-        content: editorRef.current.getHTML()
+        content: sanitizeHtml(removeScriptTags(editorRef.current.getHTML()))
       }
       const respnose = await updatePost(requestData);
       navigate(respnose.headers.get("Location"));
@@ -126,86 +191,93 @@ export default function Write() {
   }
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-white">
-        {isUpdate ? `글 수정` : '글 작성'}
-      </h2>
+    <div className="p-6 flex flex-col md:flex-row gap-6 bg-gray-100 dark:bg-gray-900">
+      <div className="p-6 bg-white dark:bg-gray-800 rounded-lg w-full">
+        <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-white">
+          {isUpdate ? `글 수정` : '글 작성'}
+        </h2>
 
-      {/* 그룹 선택 */}
-      <section className='dark:bg-dark'>
-        <div className='container'>
-          <div className='-mx-4 flex flex-wrap'>
-            <div className='w-full px-4'>
-              <div className='mb-12'>
-                <label className='mb-[10px] block text-base font-medium text-dark dark:text-white'>
-                  글을 작성할 장소를 골라주세요
-                </label>
-                <div className='relative'>
-                  <select
-                    ref={selectRef}
-                    className='relative w-full appearance-none rounded-lg border border-stroke dark:border-dark-3 bg-transparent py-2 px-5 text-black dark:text-white outline-none transition'>
-                    <option value={userInfo.id} data-isGroup={false}>
-                      {userInfo.name} (자신의 게시글)
-                    </option>
-                    {
-                      groups.length > 0 && groups.filter((item) => Object.keys(item).length > 0).length > 0 ? (
-                      groups.map((groups, index) => (
-                        <option key={index} value={groups.id} data-isGroup={true}>
-                          {groups.name}
-                        </option>
-                      ))
-                      ) : (
-                        <></>
-                      )
-                    }
-                  </select>
-                  <span className='absolute right-4 top-1/2 z-10 mt-[-2px] h-[10px] w-[10px] -translate-y-1/2 rotate-45 border-r-2 border-b-2 border-body-color'></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        {/* 그룹 선택 */}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-[250px] justify-between"
+            >
+              {selectGroup.value
+                ? groups.find((group) => group.value === selectGroup.value)?.label
+                : `작성할 장소를 선택해주세요.`}
+              <ChevronsUpDown className="opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[250px] p-0">
+            <Command>
+              <CommandInput placeholder="작성 장소 검색" className="h-9" />
+              <CommandList>
+                <CommandEmpty>찾을 수 없음.</CommandEmpty>
+                <CommandGroup>
+                  {groups.map((group) => (
+                    <CommandItem
+                      key={group.value}
+                      value={group.label}
+                      onSelect={() => {
+                        setSelectGroup(group)
+                        setOpen(false)
+                      }}
+                    >
+                      {group.label}
+                      <Check
+                        className={cn(
+                          "ml-auto",
+                          selectGroup.value === group.value ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
 
-      {/* 제목 입력 */}
-      <div className="mb-4">
-        <label htmlFor="subject" className="relative">
-          <input
-            id="subject"
+        {/* 제목 입력 */}
+
+        <div className="grid py-5 w-full max-w-sm items-center gap-1.5">
+          <Label>제목 ({subject.length}/100)</Label>
+          <Input
             type="text"
+            id="subject"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            maxLength={50}
+            maxLength={100}
+            placeholder="제목을 입력해주세요."
             className="w-full p-2 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 text-black dark:text-white"
           />
-          <span
-            className="absolute inset-y-0 start-3 -translate-y-5 bg-white px-0.5 text-sm font-medium text-gray-700 transition-transform peer-placeholder-shown:translate-y-0 peer-focus:-translate-y-5 dark:bg-gray-800 dark:text-white"
+        </div>
+
+        {/* 에디터 */}
+        <Editor
+          content={content}
+          editable={true}
+          ref={editorRef}
+        />
+
+        {/* 버튼 */}
+        <div className="flex justify-center gap-4">
+          {/* todo : 미완성 기능 */}
+          {/*<button className="bg-blue-50 text-blue-500 px-4 py-2 rounded-full">*/}
+          {/*  미리보기*/}
+          {/*</button>*/}
+          <Button
+            variant="outline"
+            className="bg-blue-50 text-blue-500 px-4 py-2 rounded-full"
+            onClick={isUpdate ? handleUpdatePost : handleSavePost}
           >
-            Subject
-          </span>
-        </label>
-        <p className="text-xs text-gray-500 mt-1">{subject.length}/100</p>
-      </div>
-
-      {/* 에디터 */}
-      <Editor
-        content={content}
-        editable={true}
-        ref={editorRef}
-      />
-
-      {/* 버튼 */}
-      <div className="flex justify-center gap-4">
-        {/* todo : 미완성 기능 */}
-        {/*<button className="bg-blue-50 text-blue-500 px-4 py-2 rounded-full">*/}
-        {/*  미리보기*/}
-        {/*</button>*/}
-        <button
-          className="bg-blue-50 text-blue-500 px-4 py-2 rounded-full"
-          onClick={isUpdate ? handleUpdatePost : handleSavePost}
-        >
-          {isUpdate ? `수정` : '게시'}
-        </button>
+            {isUpdate ? `수정` : '게시'}
+          </Button>
+        </div>
       </div>
     </div>
   );

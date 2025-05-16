@@ -121,7 +121,6 @@ export default function CreateGroup() {
           <div>
             <div className="flex items-center space-x-1">
               <span className="text-gray-800 dark:text-white font-semibold">{name || 'groupname'}</span>
-              <span className="text-orange-500 font-bold text-lg">/g</span>
             </div>
           </div>
         </div>

@@ -1,11 +1,32 @@
 import React, {useState} from "react";
 import userStore from "../../../utils/userStore.js";
 import uiStore from "../../../utils/uiStore.js";
-import {alertStatus, promptStatus} from "../../../utils/enums.js";
+import {alertStatus, promptStatus} from "@/utils/enums.js";
 
-import {followUser, unFollowUser} from "../../../service/FollowService.js";
-import UserImg from "../../../components/UserImg.jsx";
-import {formatRelativeTime} from "../../../utils/dateUtils.js";
+import {followUser, unFollowUser} from "@/service/FollowService.js";
+import {formatRelativeTime} from "@/utils/dateUtils.js";
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.jsx";
+import {
+  BookMarked,
+  CalendarIcon,
+  Eye,
+  EyeOff,
+  Flag, Heart, MessageCircle,
+  MoreHorizontal,
+  User,
+  UserMinus,
+  UserRoundPlus
+} from "lucide-react";
+import {HoverCard, HoverCardContent, HoverCardTrigger} from "@/components/ui/hover-card.jsx";
+import {Button} from "@/components/ui/button.jsx";
+import {Link} from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu.jsx";
 
 export default function PostInfo({postListItemDto, writerInfo}) {
   // 사용자
@@ -17,9 +38,9 @@ export default function PostInfo({postListItemDto, writerInfo}) {
   const {openPrompt} = uiStore((state) => state.prompt);
 
   // 상태관리
-  const [isFollow, setIsFollow] = useState(writerInfo.isFollow);
+  const [isFollow, setIsFollow] = useState(writerInfo?.isFollow || false);
 
-  const handleUserFollow = async (writerInfo) => {
+  const handleUserFollow = async () => {
     try {
       const isFollow = await openPrompt({message: `${writerInfo.name}을 구독 할까요?`, type: promptStatus.INFO});
       if (isFollow) {
@@ -50,84 +71,111 @@ export default function PostInfo({postListItemDto, writerInfo}) {
   }
 
   return (
-    <div className="max-w-2xl px-6 py-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+    <div className="max-w-2xl px-6 py-4 bg-white rounded-2xl shadow-md dark:bg-gray-900">
       {/* 헤드라인 */}
       <div className="flex items-center justify-between">
-        <div className="mt-4">
+        <div className="flex items-center">
           <div className="flex items-center">
-            <div className="flex items-center">
-              <div className="w-10 h-10">
-                <UserImg imgUrl={writerInfo.imgUrl} />
-              </div>
-              <div
-                className="mx-2 font-semibold text-gray-700 dark:text-gray-200"
-                tabIndex="0"
-                role="link">{writerInfo.name}
-              </div>
-            </div>
-            <span className="mx-1 text-xs text-gray-600 dark:text-gray-300">{formatRelativeTime(postListItemDto.createdAt)}</span>
+            <HoverCard>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={writerInfo.imgUrl} alt="user" />
+                <AvatarFallback>
+                  <User />
+                </AvatarFallback>
+              </Avatar>
+              <HoverCardTrigger asChild>
+                <Button variant="link">{writerInfo.name}</Button>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-auto rounded-2xl">
+                <div className="flex space-x-4">
+                  <Avatar className="h-7 w-7 cursor-pointer">
+                    <AvatarImage src={writerInfo.imgUrl} alt="user" />
+                    <AvatarFallback><User /></AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-semibold">
+                      <Link to={`/user/${writerInfo.id}/info`} className="hover:underline">
+                        {writerInfo.name}
+                      </Link>
+                      {isPossibleFollow &&
+                        <Button onClick={handleUserFollow}>
+                          <UserRoundPlus /> 팔로우
+                        </Button>
+                      }
+                      {isFollow &&
+                        <Button onClick={handleUserUnFollow}>
+                          <UserMinus /> 언팔로우
+                        </Button>
+                      }
+                    </h4>
+                    <p className="text-sm">
+                      사용자 설명!
+                    </p>
+                    <div className="flex items-center pt-2">
+                      <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />{" "}
+                      <span className="text-xs text-muted-foreground">
+                        사용자 가입일!
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
           </div>
+          <span className="mx-1 text-xs text-gray-600 dark:text-gray-300">{formatRelativeTime(postListItemDto.createdAt)}</span>
         </div>
-        {(isLogin && isPossibleFollow) &&
-          <button
-          onClick={(e) => {
-              e.preventDefault();
-              if (isFollow) {
-                void handleUserUnFollow(writerInfo);
-              } else {
-                void handleUserFollow(writerInfo);
-              }
-            }}
-            className="px-3 py-1 text-sm font-bold text-gray-100 transition-colors duration-300 transform bg-gray-600 rounded cursor-pointer hover:bg-gray-500"
-          >
-            {isFollow ? "unFollow" : "Follow"}
-          </button>
+        {isLogin &&
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button aria-label="더보기" className="p-2" variant="icon">
+                <MoreHorizontal size={20} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuRadioGroup>
+                <DropdownMenuItem>
+                  <Flag /> 신고
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <EyeOff /> 숨기기
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <BookMarked /> 저장
+                </DropdownMenuItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         }
       </div>
 
-      <div className="max-w-2xl overflow-hidden bg-white dark:bg-gray-800">
-        <div className="px-1.5 py-3">
+      <Link to={`/post/${postListItemDto.id}`}>
+        <div className="max-w-2xl overflow-hidden bg-white dark:bg-gray-900">
+          <div className="px-1.5 py-3">
             <span className="block mt-2 text-xl font-semibold text-gray-800 transition-colors duration-300 transform dark:text-white hover:text-gray-600">
               {postListItemDto.subject}
             </span>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            {postListItemDto.summary}
-          </p>
+            <div
+              className="dark:text-white text-sm"
+              dangerouslySetInnerHTML={{__html : postListItemDto.summary}}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* 댓글 */}
-      <div className="flex items-center justify-between mt-4">
-        <div className="flex items-center space-x-1 text-gray-500">
-          <button className="p-1 rounded-full">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-          </button>
-          <span className="text-sm">{postListItemDto.viewCount}</span>
+        {/* 댓글 */}
+        <div className="flex justify-between mt-4">
+          <Button
+            variant="icon"
+            className="flex items-center space-x-1 text-gray-500 hover:text-red-600 transition-colors duration-300">
+            <Heart />{postListItemDto.viewCount}
+          </Button>
+          <Button variant="icon" className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors duration-300">
+            <Eye />{postListItemDto.viewCount}
+          </Button>
+          <Button variant="icon" className="flex items-center space-x-1 text-gray-500 hover:text-green-600 transition-colors duration-300">
+            <MessageCircle />{postListItemDto.commentCount}
+          </Button>
         </div>
-        <div className="flex items-center space-x-1 text-gray-500">
-          <button className="p-1 rounded-full">
-            <svg
-              className="h-5 w-5 hover:text-blue-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </button>
-          <span className="text-sm">{postListItemDto.commentCount}</span>
-        </div>
-      </div>
+      </Link>
     </div>
   );
 }
