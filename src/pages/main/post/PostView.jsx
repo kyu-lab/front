@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {deletePost, getPost} from "@/service/postService.js";
+import {deletePost, getPost, toggleLike} from "@/service/postService.js";
 import {useNavigate, useParams} from "react-router-dom";
 import Editor from "../../../components/PostEditor.jsx";
 import {alertStatus, promptStatus} from "@/utils/enums.js";
@@ -8,10 +8,10 @@ import userStore from "../../../utils/userStore.js";
 import {formatDate} from "@/utils/dateUtils.js";
 import CommentList from "./CommentList.jsx";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.jsx";
-import {Eraser, Heart, MessageSquare, MoreHorizontal, Pen, Share, User, Users} from "lucide-react";
+import {Eraser, Heart, MessageSquare, MoreHorizontal, Pen, Share, User} from "lucide-react";
 import {
   DropdownMenu,
-  DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.jsx";
@@ -51,6 +51,9 @@ export default function PostView() {
         if (userInfo.id === data.writerInfo.id) {
           setIsEdit(true);
         }
+
+        // 좋아요 설정
+        setLiked(data.postInfoDto.isLike ?? false);
 
         const recentPost = {
           post: {
@@ -134,6 +137,24 @@ export default function PostView() {
     }
   };
 
+  const handlePostLike = async () => {
+    try {
+      const response = await toggleLike(id);
+      if (response.status === 200) {
+        const isLike = response.data;
+        if (isLike) {
+          post.likeCount += 1;
+        } else {
+          post.likeCount -= 1;
+        }
+        setLiked(isLike);
+      }
+    } catch (error) {
+      openAlert({message: "좋아요에 실패하였습니다.", type: alertStatus.ERROR});
+      console.error(error);
+    }
+  }
+
   return (
     <div className='mx-auto p-4 my-5 bg-white dark:bg-gray-800 rounded-3xl'>
       {/* 글 헤더 */}
@@ -154,14 +175,18 @@ export default function PostView() {
           </div>
         </div>
         <div className="flex items-center text-sm text-gray-500">
-          <div className="p-1 hover:bg-gray-100 rounded-full">
+          <div className="p-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button aria-label="더보기" className="p-2" variant="icon">
+                <Button
+                  aria-label="더보기"
+                  className="p-2 hover:bg-gray-200 hover:dark:bg-gray-600 rounded-full transition-colors duration-200"
+                  variant="icon">
                   <MoreHorizontal size={20} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuLabel>더보기</DropdownMenuLabel>
                 <DropdownMenuRadioGroup >
                   <DropdownMenuItem onSelect={handlePostShare}>
                     <Share className="h-4 w-4"/>
@@ -195,28 +220,28 @@ export default function PostView() {
           content={post.content}/>
       </div>
 
-      <hr className="my-2 border-gray-200" />
-
       {/* 액션 버튼 */}
       <div className="flex justify-between items-center my-2">
         <div className="flex gap-4">
           <Button
             variant='icon'
             className={
-              `flex items-center gap-1 px-3 py-2 rounded-lg 
-              ${liked ? "text-red-500" : "text-gray-500"} hover:bg-gray-100`
-          }
-            onClick={() => setLiked(!liked)}
+              `flex items-center gap-1 px-3 py-2 rounded-lg hover:text-red-600 transition-colors duration-300 
+              ${liked ? "text-red-500" : "text-gray-500"}`
+            }
+            onClick={handlePostLike}
           >
-            <Heart size={20} fill={liked ? "currentColor" : "none"} />
-            <span>1</span> {/* todo : 기능 추가 필요.. */}
+            <Heart
+              size={20}
+              fill={liked ? "currentColor" : "none"} />
+            <span>{post.likeCount}</span>
           </Button>
 
           <Button
             variant='icon'
-            className="flex items-center gap-1 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-100">
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-gray-500">
             <MessageSquare size={20} />
-            <span>1</span> {/* todo : 게시글에도 댓글 갯수 조회 */}
+            <span>{post.commentCount}</span>
           </Button>
         </div>
       </div>

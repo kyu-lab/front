@@ -23,7 +23,7 @@ import {Link} from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.jsx";
@@ -132,6 +132,7 @@ export default function PostInfo({postListItemDto, writerInfo}) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+              <DropdownMenuLabel>더보기</DropdownMenuLabel>
               <DropdownMenuRadioGroup>
                 <DropdownMenuItem>
                   <Flag /> 신고
@@ -161,12 +162,12 @@ export default function PostInfo({postListItemDto, writerInfo}) {
           </div>
         </div>
 
-        {/* 댓글 */}
+        {/* 게시글 표시값 */}
         <div className="flex justify-between mt-4">
           <Button
             variant="icon"
             className="flex items-center space-x-1 text-gray-500 hover:text-red-600 transition-colors duration-300">
-            <Heart />{postListItemDto.viewCount}
+            <Heart />{postListItemDto.likeCount}
           </Button>
           <Button variant="icon" className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors duration-300">
             <Eye />{postListItemDto.viewCount}

@@ -27,6 +27,10 @@ export async function updatePost(updateReq) {
   return await customAxios.put(`${API_URL}`, updateReq);
 }
 
+export async function toggleLike(postId) {
+  return await customAxios.put(`${API_URL}/${postId}/like`);
+}
+
 export async function deletePost(postId) {
   return await customAxios.delete(`${API_URL}/${postId}`);
 }
