@@ -117,9 +117,7 @@ export default function Comment ({postId, writerId, refreshList, comment, isChil
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuLabel>
-                      해당 댓글을..
-                    </DropdownMenuLabel>
+                    <DropdownMenuLabel>더보기</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuRadioGroup >
                       {writerId === userInfo.id && (
@@ -139,9 +137,6 @@ export default function Comment ({postId, writerId, refreshList, comment, isChil
                       </DropdownMenuItem>
                       <DropdownMenuItem>
                         <EyeOff /> 숨기기
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <BookMarked /> 저장
                       </DropdownMenuItem>
                     </DropdownMenuRadioGroup>
                   </DropdownMenuContent>
