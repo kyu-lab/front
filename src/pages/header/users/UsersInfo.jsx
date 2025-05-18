@@ -16,8 +16,7 @@ import {Button} from "@/components/ui/button.jsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem,
-  DropdownMenuSeparator,
+  DropdownMenuRadioGroup, DropdownMenuRadioItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.jsx";
 
@@ -37,6 +36,9 @@ export default function UsersInfo() {
   // 상태 관리
   const [userId, setUserId] = useState(null);
   const [name, setName] = useState(null);
+  const [postCount, setPostCount] = useState(0);
+  const [followCount, setFollowCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
   const [userImg, setUserImg] = useState(null);
   const [backgroundImage, setbackgroundImage] = useState(null);
 
@@ -94,6 +96,9 @@ export default function UsersInfo() {
           setUserId(data.id);
           setName(data.name);
           setUserImg(data.imgUrl);
+          setPostCount(data.postCount);
+          setFollowCount(data.followerCount);
+          setFollowingCount(data.followingCount);
         }
       } catch (error) {
 
@@ -300,22 +305,19 @@ export default function UsersInfo() {
               </div>
               <div className="text-center sm:text-left">
                 <h2 className="text-2xl font-bold">{name}</h2>
-                <p className="text-muted-foreground">내 소개~~</p>
+                <p className="text-muted-foreground">ㅇㅇ</p>
               </div>
             </div>
 
             <div className="flex gap-4 mt-4 ml-20">
               <div className="text-center">
-                <span className="font-bold">0</span> <span className="text-sm text-muted-foreground">게시물</span>
+                <span className="font-bold">{postCount}</span> <span className="text-sm text-muted-foreground">게시물</span>
               </div>
               <div className="text-center">
-                <span className="font-bold">0</span> <span className="text-sm text-muted-foreground">팔로워</span>
+                <span className="font-bold">{followCount}</span> <span className="text-sm text-muted-foreground">팔로워</span>
               </div>
               <div className="text-center">
-                <span className="font-bold">0</span> <span className="text-sm text-muted-foreground">팔로잉</span>
-              </div>
-              <div className="text-center">
-                <span className="font-bold">0</span> <span className="text-sm text-muted-foreground">좋아요</span>
+                <span className="font-bold">{followingCount}</span> <span className="text-sm text-muted-foreground">팔로잉</span>
               </div>
             </div>
           </CardContent>
