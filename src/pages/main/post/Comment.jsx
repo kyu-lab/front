@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {useNavigate} from "react-router-dom";
-import {getChildComments, getComments, saveComment} from "../../../service/commentService.js";
+import {getChildComments, getComments, saveComment, toggleLike} from "../../../service/commentService.js";
 import {alertStatus} from "../../../utils/enums.js";
 import uiStore from "../../../utils/uiStore.js";
 import userStore from "../../../utils/userStore.js";
@@ -35,10 +35,12 @@ export default function Comment ({postId, writerId, refreshList, comment, isChil
   const [editorOpen, setEditorOpen] = useState(false);
 
   // 자식 댓글 갯수
-  const [childCount, setChildCount] = useState(comment?.commentInfoDto.childCount || 0);
+  const [childCount, setChildCount] = useState(comment.commentInfoDto.childCount || 0);
   const [childComment, setChildComment] = useState(comment.child || []);
+  const [likeCount, setLikeCount] = useState(comment.commentInfoDto.likeCount || 0);
+  const [isLike, setIsLike] = useState(comment.commentInfoDto.isLike);
 
-  const exsitsReply = useRef(comment?.commentInfoDto.childCount - 2 > 0);
+  const exsitsReply = useRef(comment.commentInfoDto.childCount - 2 > 0);
   const commentId = useRef(comment.commentInfoDto.id);
 
   // 댓글 로딩
@@ -78,6 +80,26 @@ export default function Comment ({postId, writerId, refreshList, comment, isChil
       console.error(`댓글 로드 실패 : ${error}`);
     } finally {
       loading.current = false;
+    }
+  }
+
+  const handleCommentLike = async () => {
+    try {
+      if (!isLogin) {
+        return;
+      }
+      const response = await toggleLike(comment.commentInfoDto.id);
+      if (response.status === 200) {
+        const isLike = response.data;
+        if (isLike) {
+          setLikeCount(likeCount + 1);
+        } else {
+          setLikeCount(likeCount - 1);
+        }
+        setIsLike(isLike);
+      }
+    } catch (error) {
+      console.error(error);
     }
   }
 
@@ -147,19 +169,27 @@ export default function Comment ({postId, writerId, refreshList, comment, isChil
           <div className="text-gray-800 px-5 dark:text-gray-200">
             {comment.commentInfoDto.content}
           </div>
-          <div className="flex items-center mt-2 px-1">
+          <div className="flex mt-2 px-1">
             <Button
               variant="icon"
-              className="flex items-center space-x-1 transition-colors duration-200 cursor-pointer">
-              <ThumbsUp />
-              <span>99999</span>
+              className={`
+                flex items-center space-x-0.5 hover:text-blue-500 transition-colors duration-200
+                ${isLike ? "text-blue-500" : "text-gray-500"}
+                ${isLogin ? "cursor-pointer" : "cursor-default"}
+              `}
+              onClick={handleCommentLike}
+            >
+              <ThumbsUp fill={isLike ? "currentColor" : "none"}/>
+              <span>{likeCount}</span>
             </Button>
-            <Button
-              onClick={() => setEditorOpen(isOpen => !isOpen)}
-              variant="icon"
-              className="hover:text-primary-600 transition-colors duration-200 cursor-pointer">
-              <Reply /> 답장
-            </Button>
+            {isLogin &&
+              <Button
+                onClick={() => setEditorOpen(isOpen => !isOpen)}
+                variant="icon"
+                className="hover:text-primary-600 transition-colors duration-200 cursor-pointer">
+                <Reply /> 답장
+              </Button>
+            }
           </div>
         </div>
 

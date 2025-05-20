@@ -36,6 +36,8 @@ export default function CommentList({postId, writerId}) {
   const orders = [
     {id: "N", label: "최신순"},
     {id: "O", label: "오래된순"},
+    {id: "L", label: "좋아요순"},
+    {id: "C", label: "댓글수"},
   ];
 
   useEffect(() => {
