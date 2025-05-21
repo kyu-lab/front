@@ -24,7 +24,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem, DropdownMenuLabel,
-  DropdownMenuRadioGroup,
+  DropdownMenuRadioGroup, DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.jsx";
 
@@ -133,16 +133,11 @@ export default function PostInfo({postListItemDto, writerInfo}) {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuLabel>더보기</DropdownMenuLabel>
+              <DropdownMenuSeparator />
               <DropdownMenuRadioGroup>
-                <DropdownMenuItem>
-                  <Flag /> 신고
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <EyeOff /> 숨기기
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <BookMarked /> 저장
-                </DropdownMenuItem>
+                <DropdownMenuItem><Flag /> 신고</DropdownMenuItem>
+                <DropdownMenuItem><EyeOff /> 숨기기</DropdownMenuItem>
+                <DropdownMenuItem><BookMarked /> 저장</DropdownMenuItem>
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>

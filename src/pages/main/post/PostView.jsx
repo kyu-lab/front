@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {deletePost, getPost, toggleLike} from "@/service/postService.js";
+import {
+  deletePost,
+  getPost,
+  toggleLike,
+  tooglePostMark
+} from "@/service/postService.js";
 import {useNavigate, useParams} from "react-router-dom";
 import Editor from "../../../components/PostEditor.jsx";
 import {alertStatus, promptStatus} from "@/utils/enums.js";
@@ -8,11 +13,21 @@ import userStore from "../../../utils/userStore.js";
 import {formatDate} from "@/utils/dateUtils.js";
 import CommentList from "./CommentList.jsx";
 import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar.jsx";
-import {Eraser, Heart, MessageSquare, MoreHorizontal, Pen, Share, User} from "lucide-react";
+import {
+  BookmarkPlus,
+  BookmarkX,
+  Eraser,
+  Heart,
+  MessageSquare,
+  MoreHorizontal,
+  Pen,
+  Share,
+  User
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
-  DropdownMenuRadioGroup,
+  DropdownMenuRadioGroup, DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.jsx";
 import {Button} from "@/components/ui/button.jsx";
@@ -28,12 +43,13 @@ export default function PostView() {
   const [post, setPost] = useState({});
   const [writer, setWriter] = useState({});
   const [liked, setLiked] = useState(true);
+  const [bookMark, setBookMark] = useState(false);
 
   // 메뉴 제어
   const [isEdit, setIsEdit] = useState(false);
   
   // 사용자 제어
-  const {userInfo} = userStore(state => state);
+  const {isLogin, userInfo} = userStore(state => state);
   
   // ui 제어
   const {openAlert} = uiStore((state) => state.alert);
@@ -107,7 +123,23 @@ export default function PostView() {
       console.error(error);
     }
   };
-  
+
+  const handleTogglePostMark = async () => {
+    try {
+      let msg = bookMark ? '해당 게시글을 즐겨찾기에서 제거할까요?' : '해당 게시글을 즐겨찾기에 추가할까요?';
+      const isBookMark = await openPrompt({message: msg, type: promptStatus.INFO});
+      if (isBookMark) {
+        const response = await tooglePostMark(id);
+        if (response.status === 200) {
+          setBookMark(response.data);
+        }
+      }
+    } catch (error) {
+      openAlert({message: "실패하였습니다.", type: alertStatus.ERROR});
+      console.error(error);
+    }
+  };
+
   const handlePostUpdate = async () => {
     try {
       const isUpdate = await openPrompt({message: "게시글을 수정하시겠습니까?", type: promptStatus.INFO});
@@ -187,21 +219,24 @@ export default function PostView() {
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuLabel>더보기</DropdownMenuLabel>
+                <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup >
-                  <DropdownMenuItem onSelect={handlePostShare}>
-                    <Share className="h-4 w-4"/>
-                    <span>공유하기</span>
-                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={handlePostShare}><Share />공유</DropdownMenuItem>
+                  {
+                    isLogin && (
+                      <DropdownMenuItem onSelect={handleTogglePostMark}>
+                        {bookMark ? <><BookmarkX /> 즐겨찾기 해제</> : <><BookmarkPlus /> 즐겨찾기</>}
+                      </DropdownMenuItem>
+                    )
+                  }
                   {
                     isEdit && (
                       <>
                         <DropdownMenuItem onSelect={handlePostUpdate}>
-                          <Pen className="h-4 w-4"/>
-                          <span>수정하기</span>
+                          <Pen />수정
                         </DropdownMenuItem>
                         <DropdownMenuItem onSelect={handlePostDelete}>
-                          <Eraser className="h-4 w-4"/>
-                          <span>삭제하기</span>
+                          <Eraser />삭제
                         </DropdownMenuItem>
                       </>
                     )
