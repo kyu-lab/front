@@ -19,12 +19,38 @@ export async function getPost(postId) {
   throw new Error(`getPost 에러, status : ${response.status}, text : ${response.statusText}`);
 }
 
+export async function getUserPosts(userId, cursor) {
+  const requestUrl = cursor === null ? `${API_URL}/user/${userId}` : `${API_URL}/user/${userId}?cursor=${cursor}`;
+  const response = await customAxios.get(requestUrl);
+  if (response.status === 200) {
+    return response.data;
+  }
+  throw new Error(`getUserPosts 에러, status : ${response.status}, text : ${response.statusText}`);
+}
+
+export async function getUserkMarkPost(userId, cursor) {
+  const requestUrl = cursor === null ? `${API_URL}/user/${userId}/postMark` : `${API_URL}/user/${userId}/postMark?cursor=${cursor}`;
+  const response = await customAxios.get(requestUrl);
+  if (response.status === 200) {
+    return response.data;
+  }
+  throw new Error(`getUserkMarkPost 에러, status : ${response.status}, text : ${response.statusText}`);
+}
+
 export async function savePost(createReq) {
   return await customAxios.post(`${API_URL}`, createReq);
 }
 
 export async function updatePost(updateReq) {
   return await customAxios.put(`${API_URL}`, updateReq);
+}
+
+export async function toggleLike(postId) {
+  return await customAxios.put(`${API_URL}/${postId}/like`);
+}
+
+export async function tooglePostMark(postId) {
+  return await customAxios.put(`${API_URL}/${postId}/postMark`);
 }
 
 export async function deletePost(postId) {

@@ -23,3 +23,7 @@ export async function getChildComments(id, parentId, cursor) {
 export async function saveComment(createReq) {
   return await customAxios.post(`${API_URL}`, createReq);
 }
+
+export async function toggleLike(postId) {
+  return await customAxios.put(`${API_URL}/${postId}/like`);
+}
